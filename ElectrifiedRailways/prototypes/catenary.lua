@@ -23,6 +23,7 @@ pole.name = "er-catenary-pole"
 pole.minable = {mining_time = 0.2, result = "er-catenary-pole"}
 pole.fast_replaceable_group = nil
 pole.next_upgrade = nil
+pole.placeable_by = {item = "er-catenary-pole", count = 1}
 pole.maximum_wire_distance = 30
 -- Zone d'alimentation minimale : seule la porte, pas les machines alentour.
 pole.supply_area_distance = 1
@@ -41,7 +42,7 @@ item.icon_size = nil
 item.icon_mipmaps = nil
 item.subgroup = "er-catenary"
 item.order = "a[catenary-pole]"
-item.place_result = "er-catenary-pole"
+item.place_result = "er-catenary-slot"
 item.stack_size = 50
 
 pole.icons = table.deepcopy(item.icons)
@@ -49,8 +50,29 @@ pole.icon = nil
 pole.icon_size = nil
 pole.icon_mipmaps = nil
 
+-- Emplacement de pose : une copie du feu de train, pour hériter de son système de placement
+-- (aperçu collé à la voie, un seul objet par emplacement, côté gauche ou droit). Dès qu'il est
+-- posé, le script le remplace par le poteau de caténaire (voir scripts/catenary.lua).
+local slot = table.deepcopy(data.raw["rail-signal"]["rail-signal"])
+slot.name = "er-catenary-slot"
+slot.minable = {mining_time = 0.1, result = "er-catenary-pole"}
+slot.fast_replaceable_group = nil
+slot.next_upgrade = nil
+slot.factoriopedia_simulation = nil
+slot.hidden_in_factoriopedia = true
+slot.icons = table.deepcopy(item.icons)
+slot.icon = nil
+slot.icon_size = nil
+slot.icon_mipmaps = nil
+for _, set in pairs({slot.ground_picture_set, slot.elevated_picture_set}) do
+  -- Pas de lumière de signal sur l'aperçu, structure teintée comme le poteau
+  set.structure.layers = {set.structure.layers[1]}
+  set.structure.layers[1].tint = STEEL_TINT
+end
+
 data:extend({
   pole,
+  slot,
   item,
   {
     type = "recipe",

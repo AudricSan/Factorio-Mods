@@ -649,6 +649,23 @@ local function snap_pole(entity, player_index)
   return surface.create_entity({name = POLE_NAME, position = target, force = force, raise_built = false})
 end
 
+-- Le joueur pose l'emplacement (copie d'un feu de train, qui se colle à la voie) : il est
+-- remplacé aussitôt par le poteau de caténaire à la même place.
+function catenary.on_slot_built(slot, player_index)
+  ensure_storage()
+  if not is_valid(slot) then
+    return
+  end
+  local surface, position, force = slot.surface, {x = slot.position.x, y = slot.position.y}, slot.force
+  slot.destroy()
+  local pole = surface.create_entity({name = POLE_NAME, position = position, force = force, raise_built = false})
+  if not pole then
+    refund(surface, position, player_index, "er-message.catenary-slot-taken")
+    return
+  end
+  catenary.on_built(pole, player_index)
+end
+
 function catenary.on_built(entity, player_index)
   ensure_storage()
   if not is_valid(entity) or entity.name ~= POLE_NAME or not entity.unit_number then

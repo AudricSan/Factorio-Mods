@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.17
+Date: 2026-10-28
+
+  Changes:
+    - Le poteau de caténaire utilise le vrai système de pose des feux de train : l'objet pose un emplacement qui est une copie du feu de train, avec son aperçu collé à la voie, un seul objet par emplacement et le choix du côté. Le script le remplace aussitôt par le poteau de caténaire. L'aperçu a donc la forme d'un feu de train teinté acier, et le poteau n'est plus déplacé après coup.
+    - Les règles de la 0.3.16 restent en filet de sécurité : emplacement pris ou absence de voie refusent la pose et rendent l'objet.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.16
 Date: 2026-10-28
 

@@ -206,6 +206,8 @@ local function register_built_entity(event)
     if placed then
       register_transformer(placed)
     end
+  elseif entity.name == "er-catenary-slot" then
+    catenary.on_slot_built(entity, event.player_index)
   elseif entity.name == "er-catenary-pole" then
     catenary.on_built(entity, event.player_index)
   elseif rail_type_set[entity.type] then
