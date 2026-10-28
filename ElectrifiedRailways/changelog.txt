@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.16
+Date: 2026-10-28
+
+  Changes:
+    - Le poteau de caténaire se pose comme un feu de train : il se colle à un emplacement fixe, au centre de la case voisine de la voie, un emplacement tous les deux cases le long d'un rail droit. En maintenant le clic, chaque poteau se place sur l'emplacement libre le plus proche.
+    - Deux poteaux ne peuvent pas être superposés : si l'emplacement est déjà pris, la pose est refusée avec un message et l'objet est rendu.
+    - Un poteau posé sans voie à côté est maintenant refusé et rendu, au lieu de rester comme poteau ordinaire.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.15
 Date: 2026-10-28
 

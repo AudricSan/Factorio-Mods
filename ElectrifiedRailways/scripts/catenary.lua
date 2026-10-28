@@ -22,6 +22,9 @@ local GROUND_RAIL_TYPES = {"straight-rail", "half-diagonal-rail", "curved-rail-a
 local RAIL_SEARCH_RADIUS = 7
 local MIN_SIDE_DISTANCE = 1.2     -- distance minimale entre l'axe de la voie et le poteau
 local MAX_SIDE_DISTANCE = 4.5
+local SLOT_OFFSET_STRAIGHT = 1.5   -- case voisine d'un rail droit orthogonal
+local SLOT_OFFSET_CURVE = 2.0      -- diagonales et courbes
+local SLOT_MIN_DISTANCE = 1.9      -- deux portes ne peuvent pas être plus proches
 local CURVE_SAMPLES = 16
 local REFINE_STEPS = 12
 local POWER_DEPTH = 2             -- nombre de rails de part et d'autre qui reçoivent l'énergie
@@ -577,6 +580,75 @@ function catenary.rails_changed()
   storage.catenary_epoch = storage.catenary_epoch + 1
 end
 
+-- Pose à la manière d'un feu de train : le poteau se colle à un emplacement fixe à côté de la
+-- voie, un rail droit ou une demi-diagonale offrant un emplacement tous les deux cases, et ne
+-- peut pas être superposé à une autre porte. En maintenant le clic, chaque poteau se place sur
+-- l'emplacement libre le plus proche.
+local function refund(surface, position, player_index, message)
+  local player = player_index and game.get_player(player_index)
+  local stack = {name = POLE_NAME, count = 1}
+  if player and player.valid then
+    if player.insert(stack) < 1 then
+      surface.spill_item_stack({position = position, stack = stack, enable_looted = false})
+    end
+    player.create_local_flying_text({text = {message}, position = position})
+  else
+    surface.spill_item_stack({position = position, stack = stack, enable_looted = false})
+  end
+end
+
+local function snap_pole(entity, player_index)
+  local surface = entity.surface
+  local original = {x = entity.position.x, y = entity.position.y}
+  local force = entity.force
+
+  local track = find_track(entity)
+  if not track then
+    entity.destroy()
+    refund(surface, original, player_index, "er-message.catenary-no-track")
+    return nil
+  end
+
+  -- Côté du poteau par rapport à la voie, et emplacement le long de la voie
+  local nx, ny = -track.tangent.y, track.tangent.x
+  local side = ((original.x - track.center.x) * nx + (original.y - track.center.y) * ny) < 0 and -1 or 1
+  local rail = track.rail
+  local along = track.center
+  local offset = SLOT_OFFSET_CURVE
+  if rail.name == "straight-rail" or rail.name == "half-diagonal-rail" then
+    along = rail.position
+    if rail.name == "straight-rail" and rail.direction % 4 == 0 then
+      offset = SLOT_OFFSET_STRAIGHT
+    end
+  end
+  -- Les poteaux se posent au centre d'une case
+  local target = {
+    x = math.floor(along.x + nx * side * offset) + 0.5,
+    y = math.floor(along.y + ny * side * offset) + 0.5,
+  }
+
+  for _, gate in pairs(storage.catenary_gates) do
+    if is_valid(gate.pole) and gate.pole.surface == surface and gate.pole ~= entity
+      and (gate.pole.position.x - target.x) ^ 2 + (gate.pole.position.y - target.y) ^ 2
+        < SLOT_MIN_DISTANCE ^ 2 then
+      entity.destroy()
+      refund(surface, original, player_index, "er-message.catenary-slot-taken")
+      return nil
+    end
+  end
+
+  if math.abs(target.x - original.x) < 0.01 and math.abs(target.y - original.y) < 0.01 then
+    return entity
+  end
+
+  entity.destroy()
+  if not surface.can_place_entity({name = POLE_NAME, position = target, force = force}) then
+    refund(surface, original, player_index, "er-message.catenary-slot-taken")
+    return nil
+  end
+  return surface.create_entity({name = POLE_NAME, position = target, force = force, raise_built = false})
+end
+
 function catenary.on_built(entity, player_index)
   ensure_storage()
   if not is_valid(entity) or entity.name ~= POLE_NAME or not entity.unit_number then
@@ -586,13 +658,17 @@ function catenary.on_built(entity, player_index)
     return
   end
 
+  entity = snap_pole(entity, player_index)
+  if not entity then
+    return
+  end
+
   if create_gate(entity) then
     refresh_around(entity.surface, entity.position)
-  elseif player_index and game.get_player(player_index) then
-    game.get_player(player_index).create_local_flying_text({
-      text = {"er-message.catenary-no-track"},
-      position = entity.position,
-    })
+  else
+    local surface, position = entity.surface, entity.position
+    entity.destroy()
+    refund(surface, position, player_index, "er-message.catenary-no-track")
   end
 end
 
