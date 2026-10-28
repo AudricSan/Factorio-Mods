@@ -1,10 +1,12 @@
 local locomotive = table.deepcopy(data.raw.locomotive.locomotive)
 locomotive.name = "er-electric-locomotive"
 locomotive.icon = "__ElectrifiedRailways__/graphics/electric-locomotive.png"
-locomotive.icon_size = 32
+locomotive.icon_size = 64
 locomotive.icon_mipmaps = nil
 locomotive.minable = table.deepcopy(locomotive.minable)
 locomotive.minable.result = "er-electric-locomotive"
+-- Rouge électrique plus profond que la locomotive diesel ; le joueur peut toujours la repeindre
+locomotive.color = {r = 0.72, g = 0.08, b = 0.06, a = 1}
 locomotive.equipment_grid = "er-electric-locomotive-grid"
 locomotive.energy_source = table.deepcopy(locomotive.energy_source)
 locomotive.energy_source.fuel_categories = {"er-electric-fuel"}
@@ -14,7 +16,7 @@ locomotive.energy_source.burnt_inventory_size = 0
 local locomotive_item = table.deepcopy(data.raw["item-with-entity-data"].locomotive)
 locomotive_item.name = "er-electric-locomotive"
 locomotive_item.icon = locomotive.icon
-locomotive_item.icon_size = 32
+locomotive_item.icon_size = 64
 locomotive_item.icon_mipmaps = nil
 locomotive_item.subgroup = "er-electric-locomotive"
 locomotive_item.order = "a[locomotive]"

@@ -8,7 +8,7 @@ Ce projet contient l'ensemble des mods que j'ai conçus ou que j'ai forkés pour
 ### [Electrified Railways](ElectrifiedRailways/README.md)
 Fusion des idées d’ElectricTrainFix et de James-Train-Mod en un seul mod de trains électriques, avec poteaux de caténaire, batteries en grille d’équipement et transformateurs qui alimentent les rails.
 
-- **Version actuelle** : 0.3.23
+- **Version actuelle** : 0.3.24
 - **Compatibilité** : Factorio 2.1, Space Age et Elevated Rails facultatifs
 - [Récapitulatif puissances, consommation et recettes](RECAP-ElectrifiedRailways.md)
 - **Installation** : placez uniquement le dossier `ElectrifiedRailways` dans le dossier `mods` de Factorio; les deux dossiers sources d’origine ne doivent pas être installés avec lui.

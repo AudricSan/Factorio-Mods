@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.24
+Date: 2026-10-28
+
+  Graphics:
+    - La locomotive électrique est d'un rouge électrique plus profond que la locomotive diesel (le joueur peut toujours la repeindre).
+    - Nouvelle icône : l'icône de la locomotive vanilla virée au rouge profond, avec un éclair jaune. Elle sert pour l'objet et l'entité ; générée par design/make_icons.py.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.23
 Date: 2026-10-28
 

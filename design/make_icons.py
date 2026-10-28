@@ -81,6 +81,26 @@ for level in (1, 2, 3):
     b = tint(vanilla("icons/battery-equipment.png", 64), BATTERY_TINT[level])
     badge(b, level, BATTERY_BADGE[level]).save(OUT / f"er-train-battery-{level}.png")
 
+# Locomotive électrique : icône vanilla virée au rouge électrique, avec un éclair
+import colorsys
+loco = vanilla("icons/locomotive.png", 64)
+px = loco.load()
+for y in range(64):
+    for x in range(64):
+        r, g, b, a = px[x, y]
+        if a == 0:
+            continue
+        h, sat, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+        if sat > 0.35 and 0.02 < h < 0.15:      # le corps orange devient rouge profond
+            h, sat, v = 0.995, min(1.0, sat * 1.1), v * 0.82
+            r, g, b = (round(c * 255) for c in colorsys.hsv_to_rgb(h, sat, v))
+            px[x, y] = (r, g, b, a)
+bolt = [(44, 3), (30, 24), (38, 24), (30, 44), (52, 18), (43, 18), (50, 3)]
+draw = ImageDraw.Draw(loco)
+draw.polygon([(x + 1, y + 1) for x, y in bolt], fill=(20, 20, 20, 200))
+draw.polygon(bolt, fill=(255, 220, 40, 255), outline=(60, 45, 0, 255))
+loco.save(OUT.parent / "electric-locomotive.png")
+
 # Technologies (256 px) : base vanilla + élément propre au mod
 rail = vanilla("technology/railway.png", 256)
 tech = rail.copy()
