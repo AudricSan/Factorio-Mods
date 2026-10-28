@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.23
+Date: 2026-10-28
+
+  Balance:
+    - Nouvelles recettes : batterie II = 20 batteries, 20 processeurs, 6 moteurs ; batterie III = 60 batteries, 40 processeurs, 20 moteurs ; poteau de caténaire = 4 plaques d'acier, 10 câbles de cuivre, 5 bâtons de fer.
+    - Transformateur I = 20 plaques d'acier, 30 câbles de cuivre, 30 circuits électroniques ; II = 2 transformateurs I, 30 plaques d'acier, 60 câbles, 20 circuits avancés ; III = 3 transformateurs II, 60 plaques d'acier, 140 câbles, 20 processeurs.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.22
 Date: 2026-10-28
 

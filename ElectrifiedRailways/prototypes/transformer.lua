@@ -6,29 +6,29 @@ local tiers = {
     level = 1,
     power = "2MW",
     ingredients = {
-      {type = "item", name = "steel-plate", amount = 10},
+      {type = "item", name = "steel-plate", amount = 20},
       {type = "item", name = "copper-cable", amount = 30},
-      {type = "item", name = "electronic-circuit", amount = 10},
+      {type = "item", name = "electronic-circuit", amount = 30},
     },
   },
   {
     level = 2,
     power = "40MW",
     ingredients = {
-      {type = "item", name = "er-rail-transformer-1", amount = 1},
-      {type = "item", name = "steel-plate", amount = 20},
+      {type = "item", name = "er-rail-transformer-1", amount = 2},
+      {type = "item", name = "steel-plate", amount = 30},
       {type = "item", name = "copper-cable", amount = 60},
-      {type = "item", name = "advanced-circuit", amount = 10},
+      {type = "item", name = "advanced-circuit", amount = 20},
     },
   },
   {
     level = 3,
     power = "100MW",
     ingredients = {
-      {type = "item", name = "er-rail-transformer-2", amount = 1},
-      {type = "item", name = "steel-plate", amount = 40},
-      {type = "item", name = "copper-cable", amount = 120},
-      {type = "item", name = "processing-unit", amount = 10},
+      {type = "item", name = "er-rail-transformer-2", amount = 3},
+      {type = "item", name = "steel-plate", amount = 60},
+      {type = "item", name = "copper-cable", amount = 140},
+      {type = "item", name = "processing-unit", amount = 20},
     },
   },
 }

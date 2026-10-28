@@ -109,9 +109,9 @@ data:extend({
     enabled = false,
     energy_required = 0.5,
     ingredients = {
-      {type = "item", name = "steel-plate", amount = 2},
-      {type = "item", name = "copper-cable", amount = 5},
-      {type = "item", name = "iron-stick", amount = 4},
+      {type = "item", name = "steel-plate", amount = 4},
+      {type = "item", name = "copper-cable", amount = 10},
+      {type = "item", name = "iron-stick", amount = 5},
     },
     results = {{type = "item", name = "er-catenary-pole", amount = 1}},
   },

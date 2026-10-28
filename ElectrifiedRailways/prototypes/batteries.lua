@@ -14,8 +14,8 @@ data:extend({
 
 local battery_tiers = {
   {tier = 1, capacity = "5MJ", battery_count = 10, processing_units = 5, engines = 2},
-  {tier = 2, capacity = "19MJ", battery_count = 20, processing_units = 10, engines = 4},
-  {tier = 3, capacity = "124MJ", battery_count = 40, processing_units = 20, engines = 6},
+  {tier = 2, capacity = "19MJ", battery_count = 20, processing_units = 20, engines = 6},
+  {tier = 3, capacity = "124MJ", battery_count = 60, processing_units = 40, engines = 20},
 }
 
 local equipment_prototype = data.raw["battery-equipment"]["battery-equipment"]

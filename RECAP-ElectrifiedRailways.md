@@ -1,6 +1,6 @@
 # Electrified Railways — récapitulatif équilibrage
 
-Version du mod : 0.3.22. Les consommations sont **mesurées en jeu** (Factorio 2.1.23, voie droite de 766 cases, locomotive vanilla dont la locomotive électrique reprend la puissance et la physique).
+Version du mod : 0.3.23. Les consommations sont **mesurées en jeu** (Factorio 2.1.23, voie droite de 766 cases, locomotive vanilla dont la locomotive électrique reprend la puissance et la physique).
 
 ## 1. Puissances
 
@@ -71,20 +71,20 @@ Les recettes sont des valeurs initiales, à rééquilibrer.
 | --- | --- | --- |
 | Locomotive électrique | 10 s | 1 locomotive, 10 moteurs électriques, 20 circuits avancés, 10 batteries |
 | Batterie I | 10 s | 10 batteries, 5 processeurs, 2 moteurs électriques |
-| Batterie II | 20 s | 20 batteries, 10 processeurs, 4 moteurs électriques |
-| Batterie III | 30 s | 40 batteries, 20 processeurs, 6 moteurs électriques |
-| Poteau de caténaire | 0,5 s | 2 plaques d'acier, 5 câbles de cuivre, 4 bâtons de fer |
-| Transformateur I | 5 s | 10 plaques d'acier, 30 câbles de cuivre, 10 circuits électroniques |
-| Transformateur II | 10 s | 1 transformateur I, 20 plaques d'acier, 60 câbles de cuivre, 10 circuits avancés |
-| Transformateur III | 15 s | 1 transformateur II, 40 plaques d'acier, 120 câbles de cuivre, 10 processeurs |
+| Batterie II | 20 s | 20 batteries, 20 processeurs, 6 moteurs électriques |
+| Batterie III | 30 s | 60 batteries, 40 processeurs, 20 moteurs électriques |
+| Poteau de caténaire | 0,5 s | 4 plaques d'acier, 10 câbles de cuivre, 5 bâtons de fer |
+| Transformateur I | 5 s | 20 plaques d'acier, 30 câbles de cuivre, 30 circuits électroniques |
+| Transformateur II | 10 s | 2 transformateurs I, 30 plaques d'acier, 60 câbles de cuivre, 20 circuits avancés |
+| Transformateur III | 15 s | 3 transformateurs II, 60 plaques d'acier, 140 câbles de cuivre, 20 processeurs |
 
 ### Coût total des transformateurs (en partant de zéro)
 
 | Transformateur | Plaques d'acier | Câbles de cuivre | Circuits électroniques | Circuits avancés | Processeurs |
 | --- | --- | --- | --- | --- | --- |
-| I | 10 | 30 | 10 | – | – |
-| II | 30 | 90 | 10 | 10 | – |
-| III | 70 | 210 | 10 | 10 | 10 |
+| I | 20 | 30 | 30 | – | – |
+| II | 70 | 120 | 60 | 20 | – |
+| III | 270 | 500 | 180 | 60 | 20 |
 
 ## 6. Technologies
 

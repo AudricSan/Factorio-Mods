@@ -71,16 +71,16 @@ Une locomotive en accélération complète demande 600 kW à vide, 900 kW avec l
 
 Les recettes sont des valeurs initiales, encore ajustables.
 
-| Objet                 | Ingrédients initiaux                                                             |
+| Objet                 | Ingrédients                                                             |
 | --------------------- | -------------------------------------------------------------------------------- |
 | Locomotive électrique | 1 locomotive, 10 moteurs électriques, 20 circuits avancés, 10 batteries          |
 | Batterie I            | 10 batteries, 5 processeurs, 2 moteurs électriques                               |
-| Batterie II           | 20 batteries, 10 processeurs, 4 moteurs électriques                              |
-| Batterie III          | 40 batteries, 20 processeurs, 6 moteurs électriques                              |
-| Poteau de caténaire   | 2 plaques d’acier, 5 câbles en cuivre, 4 bâtons de fer                           |
-| Transformateur I      | 10 plaques d’acier, 30 câbles en cuivre, 10 circuits électroniques               |
-| Transformateur II     | 1 transformateur I, 20 plaques d’acier, 60 câbles en cuivre, 10 circuits avancés |
-| Transformateur III    | 1 transformateur II, 40 plaques d’acier, 120 câbles en cuivre, 10 processeurs    |
+| Batterie II           | 20 batteries, 20 processeurs, 6 moteurs électriques                              |
+| Batterie III          | 60 batteries, 40 processeurs, 20 moteurs électriques                              |
+| Poteau de caténaire   | 4 plaques d’acier, 10 câbles en cuivre, 5 bâtons de fer                           |
+| Transformateur I      | 20 plaques d’acier, 30 câbles en cuivre, 30 circuits électroniques               |
+| Transformateur II     | 2 transformateur I, 30 plaques d’acier, 60 câbles en cuivre, 20 circuits avancés |
+| Transformateur III    | 3 transformateur II, 60 plaques d’acier, 140 câbles en cuivre, 20 processeurs    |
 
 ## Technologies
 
