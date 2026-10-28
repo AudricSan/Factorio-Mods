@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.10
+Date: 2026-10-28
+
+  Features:
+    - Une porte de caténaire se relie au réseau électrique ordinaire par un câble extérieur : un câble de cuivre qui part du sommet du poteau de la porte vers n'importe quel poteau du jeu, avec l'affaissement d'un câble vanilla. Il se pose et s'efface avec l'outil de câble du jeu, et le dessin suit.
+    - Deux portes sur des voies différentes sont aussi reliées par ce câble extérieur, pas par un câble de caténaire.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.9
 Date: 2026-10-28
 

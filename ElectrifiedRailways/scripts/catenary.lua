@@ -29,6 +29,20 @@ local TRUSS_STEP = 0.7
 -- Portée affichée par le mode debug (l'alimentation réelle suit la connexion des rails)
 catenary.POWER_REACH = 4
 
+-- Câble extérieur vers le réseau électrique ordinaire
+local GATE_WIRE_HEIGHT = 3.1      -- accroche du câble sur le poteau de la porte (poteau moyen)
+local DEFAULT_POLE_WIRE_HEIGHT = 3.0
+local POLE_WIRE_HEIGHT = {
+  ["small-electric-pole"] = 2.6,
+  ["medium-electric-pole"] = 3.1,
+  ["big-electric-pole"] = 3.9,
+  ["substation"] = 3.7,
+}
+local FEEDER_SEGMENTS = 6
+local FEEDER_SAG_BASE = 0.12
+local FEEDER_SAG_PER_TILE = 0.025
+
+local FEEDER = {r = 0.72, g = 0.43, b = 0.2}
 local STEEL = {r = 0.46, g = 0.49, b = 0.54}
 local STEEL_DARK = {r = 0.3, g = 0.32, b = 0.36}
 local COPPER = {r = 0.85, g = 0.5, b = 0.25}
@@ -323,14 +337,61 @@ local function wire_neighbors(gate)
   return result
 end
 
+-- Entités reliées à la porte par un câble de cuivre, quelles qu'elles soient.
+local function wire_owners(gate)
+  local owners = {}
+  if not is_valid(gate.pole) then
+    return owners
+  end
+  local connector = gate.pole.get_wire_connector(defines.wire_connector_id.pole_copper, false)
+  if not connector then
+    return owners
+  end
+  for _, connection in pairs(connector.connections) do
+    local owner = connection.target.owner
+    if is_valid(owner) and owner.unit_number then
+      owners[#owners + 1] = owner
+    end
+  end
+  return owners
+end
+
 -- Empreinte des liaisons d'une porte, pour détecter qu'un câble a été posé ou effacé.
 local function link_signature(gate)
   local ids = {}
-  for _, other in ipairs(wire_neighbors(gate)) do
-    ids[#ids + 1] = other.pole.unit_number
+  for _, owner in ipairs(wire_owners(gate)) do
+    ids[#ids + 1] = owner.unit_number
   end
   table.sort(ids)
   return table.concat(ids, ",")
+end
+
+-- Hauteur d'accroche du câble sur un poteau vanilla, en cases.
+local function wire_attach_height(entity)
+  if entity.type ~= "electric-pole" then
+    return 1.0
+  end
+  return POLE_WIRE_HEIGHT[entity.name] or DEFAULT_POLE_WIRE_HEIGHT
+end
+
+-- Câble extérieur entre le sommet de la porte et un autre poteau, avec l'affaissement d'un
+-- câble de cuivre du jeu.
+local function draw_feeder(gate, surface, owner)
+  local from = top(gate.pole.position, GATE_WIRE_HEIGHT)
+  local to = top(owner.position, wire_attach_height(owner))
+  local length = math.sqrt((to.x - from.x) ^ 2 + (to.y - from.y) ^ 2)
+  local sag = FEEDER_SAG_BASE + FEEDER_SAG_PER_TILE * length
+
+  local previous = from
+  for i = 1, FEEDER_SEGMENTS do
+    local t = i / FEEDER_SEGMENTS
+    local point = {
+      x = from.x + (to.x - from.x) * t,
+      y = from.y + (to.y - from.y) * t + sag * 4 * t * (1 - t),
+    }
+    add_line(gate, surface, previous, point, FEEDER, 1.5)
+    previous = point
+  end
 end
 
 local function draw_gate(gate)
@@ -342,17 +403,24 @@ local function draw_gate(gate)
   draw_beam(gate, surface)
   draw_contact(gate, surface)
 
-  -- Le câble de caténaire est tracé au centre de la voie, une seule fois par paire de portes
-  local neighbors = wire_neighbors(gate)
+  local same_track = is_valid(gate.rail) and rails_within(gate.rail, LINK_DEPTH) or {}
   local ids = {}
-  for _, other in ipairs(neighbors) do
-    ids[#ids + 1] = other.pole.unit_number
-    if gate.pole.unit_number < other.pole.unit_number then
-      add_line(
-        gate, surface,
-        top(gate.center, WIRE_HEIGHT), top(other.center, WIRE_HEIGHT),
-        COPPER, 2
-      )
+  for _, owner in ipairs(wire_owners(gate)) do
+    ids[#ids + 1] = owner.unit_number
+    local other = owner.name == POLE_NAME and storage.catenary_gates[owner.unit_number] or nil
+    if other and other.rail_unit and same_track[other.rail_unit] then
+      -- Deux portes sur la même voie : câble de caténaire au centre de la voie, tracé une
+      -- seule fois par paire
+      if gate.pole.unit_number < owner.unit_number then
+        add_line(
+          gate, surface,
+          top(gate.center, WIRE_HEIGHT), top(other.center, WIRE_HEIGHT),
+          COPPER, 2
+        )
+      end
+    elseif owner.name ~= POLE_NAME or gate.pole.unit_number < owner.unit_number then
+      -- Réseau électrique ordinaire, ou porte d'une autre voie : câble extérieur entre poteaux
+      draw_feeder(gate, surface, owner)
     end
   end
   table.sort(ids)
