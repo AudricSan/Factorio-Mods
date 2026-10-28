@@ -171,6 +171,9 @@ local function remove_entity(event)
   if rail_type_set[entity.type] or TRANSFORMER_NAMES[entity.name] then
     storage.rails_dirty = true
   end
+  if rail_type_set[entity.type] then
+    catenary.rails_changed()
+  end
   if entity.name == "er-catenary-pole" then
     catenary.on_removed(entity)
   end
@@ -207,6 +210,7 @@ local function register_built_entity(event)
     catenary.on_built(entity, event.player_index)
   elseif rail_type_set[entity.type] then
     storage.rails_dirty = true
+    catenary.rails_changed()
   end
 end
 
@@ -490,6 +494,8 @@ local function on_rebuild_check()
   if storage.rails_dirty then
     rebuild_rail_power_map()
   end
+  -- Câbles de caténaire posés ou effacés avec l'outil de câble du jeu
+  catenary.poll_wires()
 end
 
 local function on_forced_rebuild()

@@ -1,6 +1,6 @@
 {
   "name": "ElectrifiedRailways",
-  "version": "0.3.7",
+  "version": "0.3.9",
   "title": "Electrified Railways",
   "author": "AudricSan",
   "description": "A single electric locomotive powered by catenary poles, batteries, and rail transformers that power every connected rail.",

@@ -2,6 +2,8 @@
 -- (vert, cyan si plusieurs transformateurs), les rails non alimentés (rouge), la portée des
 -- transformateurs et la portée des portes de caténaire.
 -- Les dessins sont visibles uniquement par le joueur qui a activé le mode et expirent seuls.
+local catenary = require("scripts.catenary")
+
 local debug_view = {}
 
 local REFRESH_TICKS = 60
@@ -16,6 +18,7 @@ local TRANSFORMER_POWER_MW = {
 
 local POWERED = {r = 0.1, g = 0.8, b = 0.2, a = 0.55}
 local POWERED_MULTI = {r = 0.1, g = 0.75, b = 0.85, a = 0.55}
+local GATE_RAIL = {r = 1, g = 0.6, b = 0.1, a = 0.55}
 local UNPOWERED = {r = 0.9, g = 0.15, b = 0.1, a = 0.5}
 local RANGE = {r = 1, g = 0.85, b = 0.1, a = 0.9}
 local GATE_OK = {r = 1, g = 0.55, b = 0.1, a = 0.9}
@@ -31,6 +34,19 @@ local function draw_at(surface, position, viewers)
   local rail_power = storage.rail_power or {}
   local stats = storage.transformer_stats or {}
 
+  -- Rails alimentés par une porte de caténaire proche
+  local gate_powered = {}
+  for _, gate in pairs(storage.catenary_gates or {}) do
+    local pole = gate.pole
+    if pole and pole.valid and pole.surface == surface
+      and math.abs(gate.center.x - position.x) <= VIEW_RADIUS
+      and math.abs(gate.center.y - position.y) <= VIEW_RADIUS then
+      for unit_number in pairs(catenary.gate_rails(gate)) do
+        gate_powered[unit_number] = true
+      end
+    end
+  end
+
   local powered_count, unpowered_count = 0, 0
   local rails = surface.find_entities_filtered({
     type = rail_types,
@@ -42,6 +58,9 @@ local function draw_at(surface, position, viewers)
     local color = UNPOWERED
     if sources and #sources > 0 then
       color = #sources > 1 and POWERED_MULTI or POWERED
+      powered_count = powered_count + 1
+    elseif rail.unit_number and gate_powered[rail.unit_number] then
+      color = GATE_RAIL
       powered_count = powered_count + 1
     else
       unpowered_count = unpowered_count + 1

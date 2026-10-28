@@ -27,6 +27,10 @@ pole.next_upgrade = nil
 pole.maximum_wire_distance = 9
 -- Zone d'alimentation minimale : seule la porte, pas les machines alentour.
 pole.supply_area_distance = 1
+-- Le câble de cuivre vanilla n'est pas dessiné : c'est le câble de caténaire, tracé par le
+-- script au centre de la voie, qui représente la connexion électrique entre deux portes.
+-- La connexion reste réelle et s'efface avec l'outil de câble du jeu.
+pole.draw_copper_wires = false
 tint_layers(pole.pictures)
 
 local item = table.deepcopy(base_item)

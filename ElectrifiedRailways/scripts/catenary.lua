@@ -1,24 +1,33 @@
 -- Portes de caténaire.
--- Le joueur pose un poteau (er-catenary-pole) à côté d'une voie droite. Le script détecte
--- le rail à sa gauche ou à sa droite, pose un poteau miroir (er-catenary-mirror) de l'autre
--- côté, trace la poutre au-dessus de la voie et les fils au centre de la voie. Seul ce rail
--- est alimenté : la porte ne dépasse pas la voie qu'elle enjambe.
+-- Le joueur pose un poteau (er-catenary-pole) à côté d'une voie. Le script trouve le point de
+-- la voie le plus proche et sa direction à cet endroit (voie droite, diagonale ou courbe),
+-- pose un poteau miroir (er-catenary-mirror) de l'autre côté de la voie, trace la poutre
+-- au-dessus de la voie et les fils au centre de la voie. Seul ce rail, et ses voisins directs
+-- sur la même voie, sont alimentés : la porte ne dépasse pas la voie qu'elle enjambe.
 local catenary = {}
 
 local POLE_NAME = "er-catenary-pole"
 local MIRROR_NAME = "er-catenary-mirror"
 
-local RAIL_SEARCH_RADIUS = 5
+local GROUND_RAIL_TYPES = {"straight-rail", "half-diagonal-rail", "curved-rail-a", "curved-rail-b"}
+
+local RAIL_SEARCH_RADIUS = 7
 local MIN_SIDE_DISTANCE = 1.2     -- distance minimale entre l'axe de la voie et le poteau
 local MAX_SIDE_DISTANCE = 4.5
-local POWER_REACH = 4             -- distance le long de la voie alimentée de part et d'autre
-local POWER_SEARCH_RADIUS = 7
-local WIRE_LINK_MAX = 16          -- distance maximale entre deux portes reliées par un fil
+local CURVE_SAMPLES = 16
+local REFINE_STEPS = 12
+local POWER_DEPTH = 2             -- nombre de rails de part et d'autre qui reçoivent l'énergie
+local LINK_DEPTH = 10             -- profondeur de recherche de la porte voisine sur la même voie
+local POWER_SEARCH_RADIUS = 9
+local SEGMENT_MARGIN = 4          -- écart maximal d'un rail au câble de caténaire pour être alimenté
 local REFRESH_RADIUS = 24
 
 local BEAM_HEIGHT = 3.0           -- hauteur de la poutre, en cases (sommet du poteau vanilla)
 local WIRE_HEIGHT = 2.2           -- hauteur du fil de contact
 local TRUSS_STEP = 0.7
+
+-- Portée affichée par le mode debug (l'alimentation réelle suit la connexion des rails)
+catenary.POWER_REACH = 4
 
 local STEEL = {r = 0.46, g = 0.49, b = 0.54}
 local STEEL_DARK = {r = 0.3, g = 0.32, b = 0.36}
@@ -31,49 +40,178 @@ end
 
 local function ensure_storage()
   storage.catenary_gates = storage.catenary_gates or {}
+  storage.catenary_epoch = storage.catenary_epoch or 0
 end
 
--- Orientation d'une voie droite : "vertical" (nord-sud), "horizontal" (est-ouest) ou nil.
-local function track_axis(rail)
-  local direction = rail.direction
-  if direction == defines.direction.north or direction == defines.direction.south then
-    return "vertical"
-  elseif direction == defines.direction.east or direction == defines.direction.west then
-    return "horizontal"
+-- Géométrie des rails ------------------------------------------------------------------
+
+-- Direction Factorio (16 positions, 0 = nord, sens horaire) en vecteur unitaire.
+local function direction_vector(direction)
+  local angle = direction * math.pi / 8
+  return math.sin(angle), -math.cos(angle)
+end
+
+-- Courbe de Hermite passant par les deux extrémités du rail, tangente à leur direction.
+-- Elle épouse les voies droites, les diagonales et les arcs des courbes vanilla.
+local function rail_curve(rail)
+  local end_a = rail.get_rail_end(defines.rail_direction.front)
+  local end_b = rail.get_rail_end(defines.rail_direction.back)
+  if not end_a or not end_b then
+    return nil
   end
-  return nil
+
+  local pa, pb = end_a.location.position, end_b.location.position
+  local ax, ay = direction_vector(end_a.location.direction)
+  local bx, by = direction_vector(end_b.location.direction)
+  local length = math.sqrt((pb.x - pa.x) ^ 2 + (pb.y - pa.y) ^ 2)
+  if length < 0.01 then
+    return nil
+  end
+
+  -- Pièces droites (voie droite, demi-diagonale) : la droite exacte entre les extrémités. Les
+  -- directions d'extrémité sont arrondies à 22,5°, ce qui ne reflète pas la pente 1:2 réelle.
+  if rail.type == "straight-rail" or rail.type == "half-diagonal-rail" then
+    local chord = {x = pb.x - pa.x, y = pb.y - pa.y}
+    return {p0 = pa, p1 = pb, m0 = chord, m1 = chord}
+  end
+
+  -- Courbes : les directions des extrémités pointent vers l'extérieur du rail. On entre par A en
+  -- allant à l'opposé de sa direction, et on sort par B dans la sienne.
+  return {
+    p0 = pa, p1 = pb,
+    m0 = {x = -ax * length, y = -ay * length},
+    m1 = {x = bx * length, y = by * length},
+  }
 end
 
--- Cherche le rail droit à gauche ou à droite du poteau. Retourne le centre de la voie à la
--- hauteur du poteau, l'axe de la voie et le côté du poteau (-1 ou 1), ou nil.
+local function curve_point(curve, t)
+  local t2, t3 = t * t, t * t * t
+  local h00, h10, h01, h11 = 2 * t3 - 3 * t2 + 1, t3 - 2 * t2 + t, -2 * t3 + 3 * t2, t3 - t2
+  return {
+    x = h00 * curve.p0.x + h10 * curve.m0.x + h01 * curve.p1.x + h11 * curve.m1.x,
+    y = h00 * curve.p0.y + h10 * curve.m0.y + h01 * curve.p1.y + h11 * curve.m1.y,
+  }
+end
+
+local function curve_tangent(curve, t)
+  local t2 = t * t
+  local d00, d10, d01, d11 = 6 * t2 - 6 * t, 3 * t2 - 4 * t + 1, -6 * t2 + 6 * t, 3 * t2 - 2 * t
+  local x = d00 * curve.p0.x + d10 * curve.m0.x + d01 * curve.p1.x + d11 * curve.m1.x
+  local y = d00 * curve.p0.y + d10 * curve.m0.y + d01 * curve.p1.y + d11 * curve.m1.y
+  local length = math.sqrt(x * x + y * y)
+  if length < 1e-9 then
+    return 0, 1
+  end
+  return x / length, y / length
+end
+
+local function squared_distance(a, b)
+  return (a.x - b.x) ^ 2 + (a.y - b.y) ^ 2
+end
+
+-- Point de la courbe le plus proche de `position` : (point, tangente unitaire, distance).
+local function nearest_on_curve(curve, position)
+  local best_index, best_distance = 0, math.huge
+  for i = 0, CURVE_SAMPLES do
+    local distance = squared_distance(curve_point(curve, i / CURVE_SAMPLES), position)
+    if distance < best_distance then
+      best_index, best_distance = i, distance
+    end
+  end
+
+  local low = math.max(0, (best_index - 1) / CURVE_SAMPLES)
+  local high = math.min(1, (best_index + 1) / CURVE_SAMPLES)
+  for _ = 1, REFINE_STEPS do
+    local m1 = low + (high - low) / 3
+    local m2 = high - (high - low) / 3
+    if squared_distance(curve_point(curve, m1), position) < squared_distance(curve_point(curve, m2), position) then
+      high = m2
+    else
+      low = m1
+    end
+  end
+
+  local t = (low + high) / 2
+  local point = curve_point(curve, t)
+  local tx, ty = curve_tangent(curve, t)
+  return point, tx, ty, math.sqrt(squared_distance(point, position))
+end
+
+-- Rails connectés à `start`, jusqu'à `depth` rails de distance (start compris).
+-- Retourne l'ensemble des unit_number et la liste des rails.
+local function rails_within(start, depth)
+  local visited = {}
+  if not is_valid(start) or not start.unit_number then
+    return visited, {}
+  end
+
+  visited[start.unit_number] = true
+  local all = {start}
+  local frontier = {start}
+  for _ = 1, depth do
+    local next_frontier = {}
+    for _, rail in ipairs(frontier) do
+      for _, rail_direction in pairs(defines.rail_direction) do
+        for connection_name, rail_connection_direction in pairs(defines.rail_connection_direction) do
+          if connection_name ~= "none" then
+            local neighbour = rail.get_connected_rail({
+              rail_direction = rail_direction,
+              rail_connection_direction = rail_connection_direction,
+            })
+            if is_valid(neighbour) and neighbour.unit_number and not visited[neighbour.unit_number] then
+              visited[neighbour.unit_number] = true
+              next_frontier[#next_frontier + 1] = neighbour
+              all[#all + 1] = neighbour
+            end
+          end
+        end
+      end
+    end
+    frontier = next_frontier
+  end
+  return visited, all
+end
+
+-- Distance entre un point et un segment.
+local function distance_to_segment(point, a, b)
+  local dx, dy = b.x - a.x, b.y - a.y
+  local length_squared = dx * dx + dy * dy
+  local t = 0
+  if length_squared > 1e-9 then
+    t = math.max(0, math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / length_squared))
+  end
+  local px, py = a.x + t * dx, a.y + t * dy
+  return math.sqrt((point.x - px) ^ 2 + (point.y - py) ^ 2)
+end
+
+-- Cherche la voie à gauche ou à droite du poteau. Retourne le point de la voie le plus proche,
+-- sa tangente (orientée de façon canonique) et le rail concerné, ou nil.
 local function find_track(pole)
   local rails = pole.surface.find_entities_filtered({
-    type = "straight-rail",
+    type = GROUND_RAIL_TYPES,
     position = pole.position,
     radius = RAIL_SEARCH_RADIUS,
   })
 
   local best = nil
   for _, rail in pairs(rails) do
-    local axis = track_axis(rail)
-    if axis then
-      local side, center
-      if axis == "vertical" then
-        side = pole.position.x - rail.position.x
-        center = {x = rail.position.x, y = pole.position.y}
-      else
-        side = pole.position.y - rail.position.y
-        center = {x = pole.position.x, y = rail.position.y}
-      end
-      local distance = math.abs(side)
+    local curve = rail_curve(rail)
+    if curve then
+      local point, tx, ty, distance = nearest_on_curve(curve, pole.position)
       if distance >= MIN_SIDE_DISTANCE and distance <= MAX_SIDE_DISTANCE
         and (not best or distance < best.distance) then
-        best = {center = center, axis = axis, side = side < 0 and -1 or 1, distance = distance}
+        -- Orientation canonique : toutes les portes d'une même voie partagent le même sens
+        if tx < 0 or (tx == 0 and ty < 0) then
+          tx, ty = -tx, -ty
+        end
+        best = {center = point, tangent = {x = tx, y = ty}, rail = rail, distance = distance}
       end
     end
   end
   return best
 end
+
+-- Dessin ---------------------------------------------------------------------------------
 
 local function clear_renders(gate)
   for _, object in pairs(gate.renders) do
@@ -99,7 +237,7 @@ local function add_line(gate, surface, from, to, color, width)
   })
 end
 
--- Poutre en treillis entre le sommet des deux poteaux.
+-- Poutre en treillis entre le sommet des deux poteaux, perpendiculaire à la voie.
 local function draw_beam(gate, surface)
   local a = gate.pole.position
   local b = gate.mirror.position
@@ -107,8 +245,9 @@ local function draw_beam(gate, surface)
   local top_b = top(b, BEAM_HEIGHT)
 
   -- Deuxième membrure, décalée perpendiculairement à la poutre sur l'écran
+  local dx, dy = top_b.x - top_a.x, top_b.y - top_a.y
   local offset_x, offset_y = 0, 0.35
-  if gate.axis == "horizontal" then
+  if math.abs(dy) > math.abs(dx) then
     offset_x, offset_y = 0.28, 0
   end
   local low_a = {x = top_a.x + offset_x, y = top_a.y + offset_y}
@@ -117,7 +256,6 @@ local function draw_beam(gate, surface)
   add_line(gate, surface, top_a, top_b, STEEL, 3)
   add_line(gate, surface, low_a, low_b, STEEL, 3)
 
-  local dx, dy = top_b.x - top_a.x, top_b.y - top_a.y
   local length = math.sqrt(dx * dx + dy * dy)
   local steps = math.max(2, math.floor(length / TRUSS_STEP))
   for i = 0, steps - 1 do
@@ -159,28 +297,40 @@ local function draw_contact(gate, surface)
   })
 end
 
--- Porte suivante sur la même voie, dans le sens des coordonnées croissantes.
-local function next_gate(gate)
-  local best = nil
-  local best_distance = math.huge
-  for _, other in pairs(storage.catenary_gates) do
-    if other ~= gate and other.axis == gate.axis and is_valid(other.pole)
-      and other.pole.surface == gate.pole.surface then
-      local along, across
-      if gate.axis == "vertical" then
-        along = other.center.y - gate.center.y
-        across = math.abs(other.center.x - gate.center.x)
-      else
-        along = other.center.x - gate.center.x
-        across = math.abs(other.center.y - gate.center.y)
-      end
-      if across < 0.5 and along > 0.5 and along <= WIRE_LINK_MAX and along < best_distance then
-        best = other
-        best_distance = along
+-- Portes reliées à `gate` par un câble de cuivre (une vraie connexion électrique, qu'on peut
+-- effacer avec l'outil de câble du jeu) et situées sur la même voie.
+local function wire_neighbors(gate)
+  local result = {}
+  if not is_valid(gate.pole) or not is_valid(gate.rail) then
+    return result
+  end
+
+  local connector = gate.pole.get_wire_connector(defines.wire_connector_id.pole_copper, false)
+  if not connector then
+    return result
+  end
+
+  local same_track = rails_within(gate.rail, LINK_DEPTH)
+  for _, connection in pairs(connector.connections) do
+    local owner = connection.target.owner
+    if is_valid(owner) and owner.name == POLE_NAME then
+      local other = storage.catenary_gates[owner.unit_number]
+      if other and other.rail_unit and same_track[other.rail_unit] then
+        result[#result + 1] = other
       end
     end
   end
-  return best
+  return result
+end
+
+-- Empreinte des liaisons d'une porte, pour détecter qu'un câble a été posé ou effacé.
+local function link_signature(gate)
+  local ids = {}
+  for _, other in ipairs(wire_neighbors(gate)) do
+    ids[#ids + 1] = other.pole.unit_number
+  end
+  table.sort(ids)
+  return table.concat(ids, ",")
 end
 
 local function draw_gate(gate)
@@ -192,14 +342,21 @@ local function draw_gate(gate)
   draw_beam(gate, surface)
   draw_contact(gate, surface)
 
-  local following = next_gate(gate)
-  if following then
-    add_line(
-      gate, surface,
-      top(gate.center, WIRE_HEIGHT), top(following.center, WIRE_HEIGHT),
-      COPPER, 2
-    )
+  -- Le câble de caténaire est tracé au centre de la voie, une seule fois par paire de portes
+  local neighbors = wire_neighbors(gate)
+  local ids = {}
+  for _, other in ipairs(neighbors) do
+    ids[#ids + 1] = other.pole.unit_number
+    if gate.pole.unit_number < other.pole.unit_number then
+      add_line(
+        gate, surface,
+        top(gate.center, WIRE_HEIGHT), top(other.center, WIRE_HEIGHT),
+        COPPER, 2
+      )
+    end
   end
+  table.sort(ids)
+  gate.link_signature = table.concat(ids, ",")
 end
 
 -- Redessine les portes proches d'une position (liaisons par fils comprises).
@@ -212,6 +369,8 @@ local function refresh_around(surface, position)
     end
   end
 end
+
+-- Portes -----------------------------------------------------------------------------------
 
 local function create_gate(pole)
   local track = find_track(pole)
@@ -238,11 +397,76 @@ local function create_gate(pole)
     pole = pole,
     mirror = mirror,
     center = track.center,
-    axis = track.axis,
-    side = track.side,
+    tangent = track.tangent,
+    rail = track.rail,
+    rail_unit = track.rail.unit_number,
     renders = {},
+    epoch = -1,
   }
   return true
+end
+
+-- Rails alimentés par cette porte : son rail et ses voisins directs sur la même voie.
+-- Recalculé quand des rails ont été posés ou retirés depuis le dernier calcul.
+local function powered_rails(gate)
+  if gate.epoch == storage.catenary_epoch and gate.powered then
+    return gate.powered
+  end
+
+  if not is_valid(gate.rail) and is_valid(gate.pole) then
+    local track = find_track(gate.pole)
+    if track then
+      gate.center = track.center
+      gate.tangent = track.tangent
+      gate.rail = track.rail
+      gate.rail_unit = track.rail.unit_number
+    end
+  end
+
+  -- Le rail de la porte et ses voisins directs...
+  local powered = rails_within(gate.rail, POWER_DEPTH)
+
+  -- ...et toutes les voies sous le câble de caténaire qui la relie à une autre porte
+  local neighbors = wire_neighbors(gate)
+  if #neighbors > 0 then
+    local _, track = rails_within(gate.rail, LINK_DEPTH)
+    for _, other in ipairs(neighbors) do
+      for _, rail in ipairs(track) do
+        if is_valid(rail) and rail.unit_number
+          and distance_to_segment(rail.position, gate.center, other.center) <= SEGMENT_MARGIN then
+          powered[rail.unit_number] = true
+        end
+      end
+    end
+  end
+
+  gate.powered = powered
+  gate.epoch = storage.catenary_epoch
+  return gate.powered
+end
+
+-- À appeler régulièrement : détecte les câbles de caténaire posés ou effacés avec l'outil de
+-- câble du jeu, redessine les portes concernées et recalcule les rails alimentés.
+function catenary.poll_wires()
+  ensure_storage()
+  local changed = {}
+  for _, gate in pairs(storage.catenary_gates) do
+    if is_valid(gate.pole) and is_valid(gate.mirror) and link_signature(gate) ~= gate.link_signature then
+      changed[#changed + 1] = gate
+    end
+  end
+
+  if #changed > 0 then
+    storage.catenary_epoch = storage.catenary_epoch + 1
+    for _, gate in ipairs(changed) do
+      refresh_around(gate.pole.surface, gate.pole.position)
+    end
+  end
+end
+
+function catenary.rails_changed()
+  ensure_storage()
+  storage.catenary_epoch = storage.catenary_epoch + 1
 end
 
 function catenary.on_built(entity, player_index)
@@ -288,7 +512,7 @@ end
 -- Porte alimentant ce rail (le poteau, relié à un réseau électrique), ou nil.
 function catenary.powering_pole(rail, force)
   ensure_storage()
-  if not is_valid(rail) then
+  if not is_valid(rail) or not rail.unit_number then
     return nil
   end
 
@@ -300,18 +524,20 @@ function catenary.powering_pole(rail, force)
   })
   for _, pole in pairs(poles) do
     local gate = storage.catenary_gates[pole.unit_number]
-    if gate and pole.electric_network_id then
-      local dx = rail.position.x - gate.center.x
-      local dy = rail.position.y - gate.center.y
-      if math.sqrt(dx * dx + dy * dy) <= POWER_REACH then
-        return pole
-      end
+    if gate and pole.electric_network_id and powered_rails(gate)[rail.unit_number] then
+      return pole
     end
   end
   return nil
 end
 
--- Reconstruit les portes de toutes les parties, y compris celles posées avant la 0.3.4.
+-- Rails alimentés par une porte, pour le mode debug : ensemble d'unit_number.
+function catenary.gate_rails(gate)
+  ensure_storage()
+  return powered_rails(gate)
+end
+
+-- Reconstruit les portes de toutes les parties, y compris celles posées avant la 0.3.8.
 function catenary.rebuild_all()
   ensure_storage()
   for _, gate in pairs(storage.catenary_gates) do
@@ -321,6 +547,7 @@ function catenary.rebuild_all()
     end
   end
   storage.catenary_gates = {}
+  storage.catenary_epoch = storage.catenary_epoch + 1
 
   for _, surface in pairs(game.surfaces) do
     for _, pole in pairs(surface.find_entities_filtered({name = POLE_NAME})) do
@@ -333,7 +560,5 @@ function catenary.rebuild_all()
     end
   end
 end
-
-catenary.POWER_REACH = POWER_REACH
 
 return catenary
