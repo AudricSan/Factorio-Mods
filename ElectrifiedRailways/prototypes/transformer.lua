@@ -66,12 +66,7 @@ local prototypes = {}
 
 for index, tier in ipairs(tiers) do
   local name = "er-rail-transformer-" .. tier.level
-  local icons = {{
-    icon = train_stop_item.icon,
-    icon_size = train_stop_item.icon_size or 64,
-    icon_mipmaps = train_stop_item.icon_mipmaps,
-    tint = tier_tints[index],
-  }}
+  local icons = {{icon = "__ElectrifiedRailways__/graphics/icons/" .. name .. ".png", icon_size = 64}}
   local next_name = tiers[index + 1] and ("er-rail-transformer-" .. tiers[index + 1].level) or nil
   local buffer = (tier.power:gsub("W$", "J"))
 

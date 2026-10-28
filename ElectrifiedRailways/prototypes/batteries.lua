@@ -38,6 +38,10 @@ for _, tier in ipairs(battery_tiers) do
 
   local item = table.deepcopy(item_prototype)
   item.name = item_name
+  item.icon = nil
+  item.icon_size = nil
+  item.icon_mipmaps = nil
+  item.icons = {{icon = "__ElectrifiedRailways__/graphics/icons/" .. item_name .. ".png", icon_size = 64}}
   item.place_as_equipment_result = equipment_name
   item.subgroup = "er-electric-batteries"
   item.order = "a[battery]-" .. tier.tier

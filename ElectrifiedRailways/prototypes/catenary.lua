@@ -48,7 +48,7 @@ pole.selection_box = {{-0.4, -0.4}, {0.4, 0.4}}
 
 local item = table.deepcopy(base_item)
 item.name = "er-catenary-pole"
-item.icons = {{icon = "__ElectrifiedRailways__/graphics/catenary-icon.png", icon_size = 64}}
+item.icons = {{icon = "__ElectrifiedRailways__/graphics/icons/er-catenary-pole.png", icon_size = 64}}
 item.icon = nil
 item.icon_size = nil
 item.icon_mipmaps = nil

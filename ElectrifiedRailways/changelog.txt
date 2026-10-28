@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.20
+Date: 2026-10-28
+
+  Graphics:
+    - Nouvelles icônes dans les menus et au placement : le poteau de caténaire est un portique à deux poteaux avec ses fils, les trois transformateurs et les trois batteries ont chacun leur couleur et un chiffre romain I, II ou III, et les sept technologies ont leur propre icône.
+    - Les icônes sont générées par design/make_icons.py à partir des icônes vanilla et de l'atlas de design.
+  Changes:
+    - Ajoute RECAP-ElectrifiedRailways.md à la racine du dépôt : puissances, consommation par poids de train à vide et chargé, autonomie des batteries, recettes et technologies.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.19
 Date: 2026-10-28
 

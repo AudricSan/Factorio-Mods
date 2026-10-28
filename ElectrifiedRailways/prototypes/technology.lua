@@ -10,26 +10,15 @@ local function add_pack(packs, name)
   table.insert(packs, {name, 1})
 end
 
-local function electric_technology_icon()
-  return {
-    {
-      icon = "__base__/graphics/technology/railway.png",
-      icon_size = 256,
-    },
-    {
-      icon = "__core__/graphics/icons/tooltips/tooltip-category-electricity.png",
-      icon_size = 32,
-      scale = 4,
-      shift = {0, 0},
-    },
-  }
+local function technology_icon(name)
+  return {{icon = "__ElectrifiedRailways__/graphics/icons/" .. name .. ".png", icon_size = 256}}
 end
 
-local function technology(name, prerequisites, packs, count, time, effects, order)
+local function technology(name, icon, prerequisites, packs, count, time, effects, order)
   return {
     type = "technology",
     name = name,
-    icons = electric_technology_icon(),
+    icons = technology_icon(icon),
     prerequisites = prerequisites,
     effects = effects,
     unit = {
@@ -91,6 +80,7 @@ end
 data:extend({
   technology(
     "er-electric-traction",
+    "tech-traction",
     {"railway", "electric-engine", "advanced-circuit", "battery"},
     traction_packs,
     250,
@@ -103,6 +93,7 @@ data:extend({
   ),
   technology(
     "er-battery-1",
+    "tech-battery-1",
     battery_one_prerequisites,
     battery_one_packs,
     300,
@@ -112,6 +103,7 @@ data:extend({
   ),
   technology(
     "er-battery-2",
+    "tech-battery-2",
     battery_two_prerequisites,
     battery_two_packs,
     500,
@@ -121,6 +113,7 @@ data:extend({
   ),
   technology(
     "er-battery-3",
+    "tech-battery-3",
     battery_three_prerequisites,
     battery_three_packs,
     700,
@@ -130,6 +123,7 @@ data:extend({
   ),
   technology(
     "er-rail-transformer-1",
+    "tech-transformer-1",
     {"er-electric-traction", "electric-energy-distribution-1"},
     traction_packs,
     200,
@@ -139,6 +133,7 @@ data:extend({
   ),
   technology(
     "er-rail-transformer-2",
+    "tech-transformer-2",
     transformer_two_prerequisites,
     battery_one_packs,
     400,
@@ -148,6 +143,7 @@ data:extend({
   ),
   technology(
     "er-rail-transformer-3",
+    "tech-transformer-3",
     transformer_three_prerequisites,
     electrified_rail_packs,
     800,
