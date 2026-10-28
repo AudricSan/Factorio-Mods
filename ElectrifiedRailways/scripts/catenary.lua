@@ -42,7 +42,9 @@ local BRACE_DROP = 0.9               -- point d'attache des jambes de force sous
 -- Caténaire à double fil : fil porteur en haut (accroché à la poutre) et fil de contact en bas,
 -- reliés par des pendules tous les DROPPER_STEP cases.
 local MESSENGER = {r = 0.72, g = 0.74, b = 0.78}
-local MESSENGER_HEIGHT = 2.8
+local MESSENGER_HEIGHT = 2.6
+local BEAM_THICKNESS = 0.38          -- épaisseur du bras sur l'écran, en cases
+local INSULATOR_SCALE = 0.5
 local DROPPER_STEP = 3
 local MESSENGER_SAG = 0.012
 
@@ -271,76 +273,69 @@ local function add_line(gate, surface, from, to, color, width)
   })
 end
 
+-- Sprites (découpés dans l'atlas de design) : taille native en cases, avec scale 0.5
+local BEAM_SPRITE_LENGTH = 1.656
+local BEAM_SPRITE_THICKNESS = 0.625
+local STRUT_SPRITE_LENGTH = 1.4
+local STRUT_SPRITE_ANGLE = 0.1222      -- orientation du sens haut-gauche -> bas-droite, en tours (44°)
+
+local function add_sprite(gate, surface, name, target, orientation, x_scale, y_scale)
+  gate.renders[#gate.renders + 1] = rendering.draw_sprite({
+    sprite = name,
+    target = target,
+    orientation = orientation,
+    x_scale = x_scale,
+    y_scale = y_scale or x_scale,
+    surface = surface,
+    render_layer = "wires",
+  })
+end
+
+-- Orientation (en tours, 0 = sprite non tourné) d'un vecteur d'écran
+local function turns(dx, dy)
+  return (math.atan2(dy, dx) / (2 * math.pi)) % 1
+end
+
 -- Bras en treillis du poteau jusqu'au centre de la voie, avec une jambe de force en dessous.
 local function draw_beam(gate, surface)
-  local top_a = top(gate.pole.position, BEAM_HEIGHT)
-  local top_b = top(gate.center, BEAM_HEIGHT)
-
-  -- Deuxième membrure, décalée perpendiculairement au bras sur l'écran
-  local dx, dy = top_b.x - top_a.x, top_b.y - top_a.y
-  local offset_x, offset_y = 0, 0.35
-  if math.abs(dy) > math.abs(dx) then
-    offset_x, offset_y = 0.28, 0
-  end
-  local low_a = {x = top_a.x + offset_x, y = top_a.y + offset_y}
-  local low_b = {x = top_b.x + offset_x, y = top_b.y + offset_y}
-
-  add_line(gate, surface, top_a, top_b, STEEL, 3)
-  add_line(gate, surface, low_a, low_b, STEEL, 3)
-
+  local from = top(gate.pole.position, BEAM_HEIGHT)
+  local to = top(gate.center, BEAM_HEIGHT)
+  local dx, dy = to.x - from.x, to.y - from.y
   local length = math.sqrt(dx * dx + dy * dy)
-  local steps = math.max(2, math.floor(length / TRUSS_STEP))
-  for i = 0, steps - 1 do
-    local t0, t1 = i / steps, (i + 1) / steps
-    local from, to
-    if i % 2 == 0 then
-      from = {x = top_a.x + dx * t0, y = top_a.y + dy * t0}
-      to = {x = low_a.x + dx * t1, y = low_a.y + dy * t1}
-    else
-      from = {x = low_a.x + dx * t0, y = low_a.y + dy * t0}
-      to = {x = top_a.x + dx * t1, y = top_a.y + dy * t1}
-    end
-    add_line(gate, surface, from, to, STEEL_DARK, 1.5)
+  if length < 0.2 then
+    return
   end
+
+  add_sprite(
+    gate, surface, "er-catenary-beam",
+    {x = from.x + dx / 2, y = from.y + dy / 2}, turns(dx, dy),
+    length / BEAM_SPRITE_LENGTH, BEAM_THICKNESS / BEAM_SPRITE_THICKNESS
+  )
 
   -- Jambe de force oblique entre le poteau et le bras
-  if length > 2 * BRACE_SPAN then
-    local t = 0.6
-    add_line(
-      gate, surface,
-      top(gate.pole.position, BEAM_HEIGHT - BRACE_DROP),
-      {x = low_a.x + dx * t, y = low_a.y + dy * t},
-      STEEL_DARK, 2
+  if length > 1.2 then
+    local strut_from = top(gate.pole.position, BEAM_HEIGHT - BRACE_DROP)
+    local strut_to = {x = from.x + dx * 0.6, y = from.y + dy * 0.6 + 0.15}
+    local sx, sy = strut_to.x - strut_from.x, strut_to.y - strut_from.y
+    local strut_length = math.sqrt(sx * sx + sy * sy)
+    add_sprite(
+      gate, surface, "er-catenary-strut",
+      {x = strut_from.x + sx / 2, y = strut_from.y + sy / 2},
+      (turns(sx, sy) - STRUT_SPRITE_ANGLE) % 1,
+      strut_length / STRUT_SPRITE_LENGTH
     )
   end
 end
 
--- Suspente et fil de contact au centre de la voie.
+-- Isolateur au bout du bras, pendule et fil de contact au centre de la voie.
 local function draw_contact(gate, surface)
   local center = gate.center
-  local beam_point = top(center, BEAM_HEIGHT - 0.2)
   local wire_point = top(center, WIRE_HEIGHT)
 
-  add_line(gate, surface, beam_point, wire_point, STEEL_DARK, 2)
-  -- Isolateur : trois disques bruns empilés sous le bras
-  for k = 0, 2 do
-    gate.renders[#gate.renders + 1] = rendering.draw_circle({
-      color = INSULATOR,
-      radius = 0.09,
-      filled = true,
-      target = top(center, BEAM_HEIGHT - 0.05 - k * 0.08),
-      surface = surface,
-      render_layer = "wires",
-    })
-  end
-  gate.renders[#gate.renders + 1] = rendering.draw_circle({
-    color = COPPER,
-    radius = 0.08,
-    filled = true,
-    target = wire_point,
-    surface = surface,
-    render_layer = "wires",
-  })
+  add_sprite(gate, surface, "er-catenary-insulator", top(center, BEAM_HEIGHT - 0.2), 0, INSULATOR_SCALE)
+  add_line(gate, surface, top(center, MESSENGER_HEIGHT), wire_point, STEEL_DARK, 1.5)
+  add_sprite(gate, surface, "er-catenary-clamp", top(center, MESSENGER_HEIGHT), 0, 0.5)
+  add_sprite(gate, surface, "er-catenary-dropper", top(center, WIRE_HEIGHT + 0.15), 0, 0.5)
 end
 
 -- Portes reliées à `gate` par un câble de cuivre (une vraie connexion électrique, qu'on peut

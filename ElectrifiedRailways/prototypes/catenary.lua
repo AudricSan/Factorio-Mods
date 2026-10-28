@@ -6,18 +6,6 @@ local base_item = data.raw.item["medium-electric-pole"]
 -- acier gris pour le distinguer.
 local STEEL_TINT = {r = 0.78, g = 0.82, b = 0.9}
 
-local function tint_layers(node)
-  if node.layers then
-    for _, layer in ipairs(node.layers) do
-      if not layer.draw_as_shadow then
-        layer.tint = STEEL_TINT
-      end
-    end
-  elseif not node.draw_as_shadow then
-    node.tint = STEEL_TINT
-  end
-end
-
 local pole = table.deepcopy(base_pole)
 pole.name = "er-catenary-pole"
 pole.minable = {mining_time = 0.2, result = "er-catenary-pole"}
@@ -32,11 +20,35 @@ pole.supply_area_distance = 1
 -- La connexion reste réelle et s'efface avec l'outil de câble du jeu.
 pole.draw_copper_wires = false
 pole.draw_circuit_wires = false
-tint_layers(pole.pictures)
+pole.connection_points = {pole.connection_points[1]}
+pole.pictures = {
+  layers = {
+    {
+      filename = "__ElectrifiedRailways__/graphics/catenary-post.png",
+      width = 65,
+      height = 221,
+      scale = 0.5,
+      direction_count = 1,
+      priority = "extra-high",
+      shift = {0, -1.275},
+    },
+    {
+      filename = "__ElectrifiedRailways__/graphics/catenary-post-shadow.png",
+      width = 221,
+      height = 48,
+      scale = 0.5,
+      direction_count = 1,
+      draw_as_shadow = true,
+      priority = "extra-high",
+      shift = {1.75, 0.55},
+    },
+  },
+}
+pole.selection_box = {{-0.4, -0.4}, {0.4, 0.4}}
 
 local item = table.deepcopy(base_item)
 item.name = "er-catenary-pole"
-item.icons = {{icon = base_item.icon, icon_size = base_item.icon_size or 64, icon_mipmaps = base_item.icon_mipmaps, tint = STEEL_TINT}}
+item.icons = {{icon = "__ElectrifiedRailways__/graphics/catenary-icon.png", icon_size = 64}}
 item.icon = nil
 item.icon_size = nil
 item.icon_mipmaps = nil
@@ -70,9 +82,28 @@ for _, set in pairs({slot.ground_picture_set, slot.elevated_picture_set}) do
   set.structure.layers[1].tint = STEEL_TINT
 end
 
+-- Sprites tracés par le script (bras, isolateur, jambe de force, pince, pendule), découpés
+-- dans l'atlas de design (voir design/make_catenary_sprites.py)
+local function render_sprite(name, width, height)
+  return {
+    type = "sprite",
+    name = name,
+    filename = "__ElectrifiedRailways__/graphics/" .. name .. ".png",
+    width = width,
+    height = height,
+    scale = 0.5,
+    priority = "high",
+  }
+end
+
 data:extend({
   pole,
   slot,
+  render_sprite("er-catenary-beam", 106, 40),
+  render_sprite("er-catenary-insulator", 25, 56),
+  render_sprite("er-catenary-strut", 74, 66),
+  render_sprite("er-catenary-clamp", 34, 32),
+  render_sprite("er-catenary-dropper", 17, 40),
   item,
   {
     type = "recipe",

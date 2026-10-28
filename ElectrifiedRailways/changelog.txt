@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.18
+Date: 2026-10-28
+
+  Graphics:
+    - Le poteau de caténaire, le bras en treillis, la jambe de force, l'isolateur, la pince et les pendules reprennent les images de l'atlas de design (fond transparent, découpées par design/make_catenary_sprites.py). Le poteau a un fût en treillis sur un socle en béton, avec une ombre ; l'icône est celle du poteau.
+    - Le bras est étiré et orienté par le script entre le poteau et le centre de la voie ; l'isolateur est accroché sous son extrémité.
+    - Le fil porteur est plus proche du fil de contact (pendules plus courts).
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.17
 Date: 2026-10-28
 

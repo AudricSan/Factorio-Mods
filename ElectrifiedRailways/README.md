@@ -101,7 +101,7 @@ Quand tu poses ou retires un rail ou un transformateur, l’alimentation est rec
 
 ## Graphismes
 
-Le poteau de caténaire reprend le poteau moyen du jeu de base, teinté acier gris. Le bras, les isolateurs, les pendules et les fils de la porte sont tracés par le script, d’après l’atlas de design du dossier `design/`. Les transformateurs reprennent la partie « niveau du rail » des gares vanilla, teintée selon le niveau (bleu, orange, rouge) ; leur orientation suit la voie et ne se change pas à la main. Aucune image n’est dessinée pour le mod, sauf l’icône de la locomotive.
+Le poteau de caténaire, le bras en treillis, la jambe de force, l’isolateur, la pince et les pendules viennent de l’atlas de design (dossier `design/`, découpe par `design/make_catenary_sprites.py`). Le bras est étiré et orienté par le script entre le poteau et le centre de la voie. Les fils sont tracés par le script. Les transformateurs reprennent la partie « niveau du rail » des gares vanilla, teintée selon le niveau (bleu, orange, rouge) ; leur orientation suit la voie et ne se change pas à la main. Les images du mod sont l’icône de la locomotive et les sprites de la caténaire.
 
 ## Compatibilité
 
