@@ -176,8 +176,6 @@ local function remove_entity(event)
   end
   if entity.name == "er-catenary-pole" then
     catenary.on_removed(entity)
-  elseif entity.name == "er-catenary-mirror-pole" then
-    catenary.on_mirror_removed(entity)
   end
 
   local unit_number = entity.unit_number

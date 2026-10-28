@@ -1,13 +1,12 @@
 -- Portes de caténaire.
 -- Le joueur pose un poteau (er-catenary-pole) à côté d'une voie. Le script trouve le point de
 -- la voie le plus proche et sa direction à cet endroit (voie droite, diagonale ou courbe),
--- pose un poteau miroir (er-catenary-mirror) de l'autre côté de la voie, trace la poutre
--- au-dessus de la voie et les fils au centre de la voie. Seul ce rail, et ses voisins directs
--- sur la même voie, sont alimentés : la porte ne dépasse pas la voie qu'elle enjambe.
+-- trace un bras en treillis qui part du poteau jusqu'au centre de la voie, et les fils au
+-- centre de la voie. Un seul poteau, à gauche ou à droite : la caténaire reste centrale. Seul
+-- ce rail, et ses voisins directs sur la même voie, sont alimentés.
 local catenary = {}
 
 local POLE_NAME = "er-catenary-pole"
-local MIRROR_NAME = "er-catenary-mirror-pole"
 local COPPER_WIRE = defines.wire_connector_id.pole_copper
 
 -- Tous les fils d'une porte passent par le centre de la voie, câbles logiques compris.
@@ -73,7 +72,6 @@ end
 local function ensure_storage()
   storage.catenary_gates = storage.catenary_gates or {}
   storage.catenary_epoch = storage.catenary_epoch or 0
-  storage.catenary_mirrors = storage.catenary_mirrors or {}
 end
 
 -- Géométrie des rails ------------------------------------------------------------------
@@ -270,14 +268,12 @@ local function add_line(gate, surface, from, to, color, width)
   })
 end
 
--- Poutre en treillis entre le sommet des deux poteaux, perpendiculaire à la voie.
+-- Bras en treillis du poteau jusqu'au centre de la voie, avec une jambe de force en dessous.
 local function draw_beam(gate, surface)
-  local a = gate.pole.position
-  local b = gate.mirror.position
-  local top_a = top(a, BEAM_HEIGHT)
-  local top_b = top(b, BEAM_HEIGHT)
+  local top_a = top(gate.pole.position, BEAM_HEIGHT)
+  local top_b = top(gate.center, BEAM_HEIGHT)
 
-  -- Deuxième membrure, décalée perpendiculairement à la poutre sur l'écran
+  -- Deuxième membrure, décalée perpendiculairement au bras sur l'écran
   local dx, dy = top_b.x - top_a.x, top_b.y - top_a.y
   local offset_x, offset_y = 0, 0.35
   if math.abs(dy) > math.abs(dx) then
@@ -304,12 +300,15 @@ local function draw_beam(gate, surface)
     add_line(gate, surface, from, to, STEEL_DARK, 1.5)
   end
 
-  -- Jambes de force : renfort oblique entre chaque poteau et la poutre
-  local length_beam = math.sqrt(dx * dx + dy * dy)
-  if length_beam > 2 * BRACE_SPAN then
-    local ux, uy = dx / length_beam, dy / length_beam
-    add_line(gate, surface, top(a, BEAM_HEIGHT - BRACE_DROP), {x = low_a.x + ux * BRACE_SPAN, y = low_a.y + uy * BRACE_SPAN}, STEEL_DARK, 2)
-    add_line(gate, surface, top(b, BEAM_HEIGHT - BRACE_DROP), {x = low_b.x - ux * BRACE_SPAN, y = low_b.y - uy * BRACE_SPAN}, STEEL_DARK, 2)
+  -- Jambe de force oblique entre le poteau et le bras
+  if length > 2 * BRACE_SPAN then
+    local t = 0.6
+    add_line(
+      gate, surface,
+      top(gate.pole.position, BEAM_HEIGHT - BRACE_DROP),
+      {x = low_a.x + dx * t, y = low_a.y + dy * t},
+      STEEL_DARK, 2
+    )
   end
 end
 
@@ -320,14 +319,17 @@ local function draw_contact(gate, surface)
   local wire_point = top(center, WIRE_HEIGHT)
 
   add_line(gate, surface, beam_point, wire_point, STEEL_DARK, 2)
-  gate.renders[#gate.renders + 1] = rendering.draw_circle({
-    color = INSULATOR,
-    radius = 0.1,
-    filled = true,
-    target = top(center, BEAM_HEIGHT - 0.45),
-    surface = surface,
-    render_layer = "wires",
-  })
+  -- Isolateur : trois disques bruns empilés sous le bras
+  for k = 0, 2 do
+    gate.renders[#gate.renders + 1] = rendering.draw_circle({
+      color = INSULATOR,
+      radius = 0.09,
+      filled = true,
+      target = top(center, BEAM_HEIGHT - 0.05 - k * 0.08),
+      surface = surface,
+      render_layer = "wires",
+    })
+  end
   gate.renders[#gate.renders + 1] = rendering.draw_circle({
     color = COPPER,
     radius = 0.08,
@@ -449,7 +451,7 @@ end
 
 local function draw_gate(gate)
   clear_renders(gate)
-  if not is_valid(gate.pole) or not is_valid(gate.mirror) then
+  if not is_valid(gate.pole) then
     return
   end
   local surface = gate.pole.surface
@@ -493,69 +495,14 @@ end
 
 -- Portes -----------------------------------------------------------------------------------
 
--- Poteau principal de la porte à laquelle appartient `owner` (poteau ou miroir), ou `owner`
--- lui-même s'il n'appartient à aucune porte.
-local function gate_pole_of(owner)
-  if owner.name == MIRROR_NAME then
-    local gate = storage.catenary_gates[storage.catenary_mirrors[owner.unit_number] or -1]
-    return is_valid(gate and gate.pole) and gate.pole or nil
-  end
-  return owner
-end
-
--- Le miroir ne porte aucun câble : ceux qu'on y tire (ou qu'il prend à la pose) sont reportés
--- sur le poteau principal. Renvoie true si une liaison a été déplacée ou retirée.
-local function redirect_mirror(gate)
-  if not is_valid(gate.mirror) or not is_valid(gate.pole) then
-    return false
-  end
-  local moved = false
-  for _, kind in ipairs(WIRE_KINDS) do
-    local from = gate.mirror.get_wire_connector(kind.id, false)
-    if from and #from.connections > 0 then
-      local to = gate.pole.get_wire_connector(kind.id, true)
-      local moves = {}
-      for _, connection in pairs(from.connections) do
-        moves[#moves + 1] = {target = connection.target, origin = connection.origin}
-      end
-      for _, move in ipairs(moves) do
-        local owner = move.target.owner
-        local destination = is_valid(owner) and gate_pole_of(owner) or nil
-        from.disconnect_from(move.target, move.origin)
-        if destination and destination ~= gate.pole then
-          to.connect_to(destination.get_wire_connector(kind.id, true), false, move.origin)
-        end
-      end
-      moved = true
-    end
-  end
-  return moved
-end
-
 local function create_gate(pole)
   local track = find_track(pole)
   if not track then
     return false
   end
 
-  local mirror_position = {
-    x = 2 * track.center.x - pole.position.x,
-    y = 2 * track.center.y - pole.position.y,
-  }
-  local mirror = pole.surface.create_entity({
-    name = MIRROR_NAME,
-    position = mirror_position,
-    force = pole.force,
-    raise_built = false,
-  })
-  if not mirror then
-    return false
-  end
-  mirror.destructible = false
-
   local gate = {
     pole = pole,
-    mirror = mirror,
     center = track.center,
     tangent = track.tangent,
     rail = track.rail,
@@ -564,8 +511,6 @@ local function create_gate(pole)
     epoch = -1,
   }
   storage.catenary_gates[pole.unit_number] = gate
-  storage.catenary_mirrors[mirror.unit_number] = pole.unit_number
-  redirect_mirror(gate)
   return true
 end
 
@@ -614,11 +559,8 @@ function catenary.poll_wires()
   ensure_storage()
   local changed = {}
   for _, gate in pairs(storage.catenary_gates) do
-    if is_valid(gate.pole) and is_valid(gate.mirror) then
-      redirect_mirror(gate)
-      if link_signature(gate) ~= gate.link_signature then
-        changed[#changed + 1] = gate
-      end
+    if is_valid(gate.pole) and link_signature(gate) ~= gate.link_signature then
+      changed[#changed + 1] = gate
     end
   end
 
@@ -654,7 +596,7 @@ function catenary.on_built(entity, player_index)
   end
 end
 
-function catenary.on_removed(entity, keep_mirror)
+function catenary.on_removed(entity)
   ensure_storage()
   if not entity or not entity.unit_number then
     return
@@ -665,32 +607,10 @@ function catenary.on_removed(entity, keep_mirror)
   end
 
   clear_renders(gate)
-  if is_valid(gate.mirror) then
-    storage.catenary_mirrors[gate.mirror.unit_number] = nil
-    if not keep_mirror then
-      gate.mirror.destroy()
-    end
-  end
   storage.catenary_gates[entity.unit_number] = nil
 
   if entity.valid then
     refresh_around(entity.surface, entity.position)
-  end
-end
-
--- Le joueur (ou un robot) retire le poteau miroir : la porte disparaît avec lui. Le miroir
--- rend l'objet, le poteau principal est détruit sans en rendre un second.
-function catenary.on_mirror_removed(mirror)
-  ensure_storage()
-  local pole_unit = mirror.unit_number and storage.catenary_mirrors[mirror.unit_number]
-  local gate = pole_unit and storage.catenary_gates[pole_unit]
-  if not gate then
-    return
-  end
-  local pole = gate.pole
-  catenary.on_removed(pole, true)
-  if is_valid(pole) then
-    pole.destroy()
   end
 end
 
@@ -727,12 +647,8 @@ function catenary.rebuild_all()
   ensure_storage()
   for _, gate in pairs(storage.catenary_gates) do
     clear_renders(gate)
-    if is_valid(gate.mirror) then
-      gate.mirror.destroy()
-    end
   end
   storage.catenary_gates = {}
-  storage.catenary_mirrors = {}
   storage.catenary_epoch = storage.catenary_epoch + 1
 
   for _, surface in pairs(game.surfaces) do

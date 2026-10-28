@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.15
+Date: 2026-10-28
+
+  Changes:
+    - Une porte de caténaire n'a plus qu'un seul poteau, à gauche ou à droite de la voie. Un bras en treillis avec une jambe de force part du poteau jusqu'au centre de la voie, et la caténaire (fil porteur, pendules, fil de contact) reste centrale. Le poteau miroir est supprimé : les anciens poteaux miroirs disparaissent au chargement de la partie.
+    - Les isolateurs au bout du bras sont des piles de disques bruns, comme sur l'atlas de design.
+    - Le poteau de caténaire est teinté acier gris au lieu de cuivre.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.14
 Date: 2026-10-28
 
