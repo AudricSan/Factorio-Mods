@@ -10,6 +10,14 @@ local POLE_NAME = "er-catenary-pole"
 local MIRROR_NAME = "er-catenary-mirror-pole"
 local COPPER_WIRE = defines.wire_connector_id.pole_copper
 
+-- Tous les fils d'une porte passent par le centre de la voie, câbles logiques compris.
+-- `height` : hauteur du fil dans la caténaire ; `color` : couleur des fils tracés.
+local WIRE_KINDS = {
+  {id = COPPER_WIRE, key = "p", height = 2.2, color = {r = 0.85, g = 0.5, b = 0.25}},
+  {id = defines.wire_connector_id.circuit_red, key = "r", height = 2.0, color = {r = 0.85, g = 0.2, b = 0.15}},
+  {id = defines.wire_connector_id.circuit_green, key = "g", height = 1.85, color = {r = 0.2, g = 0.7, b = 0.25}},
+}
+
 local GROUND_RAIL_TYPES = {"straight-rail", "half-diagonal-rail", "curved-rail-a", "curved-rail-b"}
 
 local RAIL_SEARCH_RADIUS = 7
@@ -357,12 +365,12 @@ local function wire_neighbors(gate)
 end
 
 -- Entités reliées à la porte par un câble de cuivre, quelles qu'elles soient.
-local function wire_owners(gate)
+local function wire_owners(gate, connector_id)
   local owners = {}
   if not is_valid(gate.pole) then
     return owners
   end
-  local connector = gate.pole.get_wire_connector(defines.wire_connector_id.pole_copper, false)
+  local connector = gate.pole.get_wire_connector(connector_id or COPPER_WIRE, false)
   if not connector then
     return owners
   end
@@ -378,8 +386,10 @@ end
 -- Empreinte des liaisons d'une porte, pour détecter qu'un câble a été posé ou effacé.
 local function link_signature(gate)
   local ids = {}
-  for _, owner in ipairs(wire_owners(gate)) do
-    ids[#ids + 1] = owner.unit_number
+  for _, kind in ipairs(WIRE_KINDS) do
+    for _, owner in ipairs(wire_owners(gate, kind.id)) do
+      ids[#ids + 1] = kind.key .. owner.unit_number
+    end
   end
   table.sort(ids)
   return table.concat(ids, ",")
@@ -419,7 +429,7 @@ end
 
 -- Câble extérieur entre le sommet de la porte et un autre poteau, avec l'affaissement d'un
 -- câble de cuivre du jeu.
-local function draw_feeder(gate, surface, owner)
+local function draw_feeder(gate, surface, owner, color)
   local from = top(gate.pole.position, GATE_WIRE_HEIGHT)
   local to = top(owner.position, wire_attach_height(owner))
   local length = math.sqrt((to.x - from.x) ^ 2 + (to.y - from.y) ^ 2)
@@ -432,7 +442,7 @@ local function draw_feeder(gate, surface, owner)
       x = from.x + (to.x - from.x) * t,
       y = from.y + (to.y - from.y) * t + sag * 4 * t * (1 - t),
     }
-    add_line(gate, surface, previous, point, FEEDER, 1.5)
+    add_line(gate, surface, previous, point, color or FEEDER, 1.5)
     previous = point
   end
 end
@@ -447,23 +457,27 @@ local function draw_gate(gate)
   draw_contact(gate, surface)
 
   local same_track = is_valid(gate.rail) and rails_within(gate.rail, LINK_DEPTH) or {}
-  local ids = {}
-  for _, owner in ipairs(wire_owners(gate)) do
-    ids[#ids + 1] = owner.unit_number
-    local other = owner.name == POLE_NAME and storage.catenary_gates[owner.unit_number] or nil
-    if other and other.rail_unit and same_track[other.rail_unit] then
-      -- Deux portes sur la même voie : câble de caténaire au centre de la voie, tracé une
-      -- seule fois par paire
-      if gate.pole.unit_number < owner.unit_number then
-        draw_double_wire(gate, surface, gate.center, other.center)
+  for _, kind in ipairs(WIRE_KINDS) do
+    for _, owner in ipairs(wire_owners(gate, kind.id)) do
+      local other = owner.name == POLE_NAME and storage.catenary_gates[owner.unit_number] or nil
+      if other and other.rail_unit and same_track[other.rail_unit] then
+        -- Deux portes sur la même voie : le fil passe par le centre de la voie, tracé une
+        -- seule fois par paire. Le courant est la caténaire à double fil, les câbles logiques
+        -- sont des fils simples juste en dessous.
+        if gate.pole.unit_number < owner.unit_number then
+          if kind.id == COPPER_WIRE then
+            draw_double_wire(gate, surface, gate.center, other.center)
+          else
+            add_line(gate, surface, top(gate.center, kind.height), top(other.center, kind.height), kind.color, 1.5)
+          end
+        end
+      elseif owner.name ~= POLE_NAME or gate.pole.unit_number < owner.unit_number then
+        -- Réseau ordinaire, ou porte d'une autre voie : câble extérieur entre poteaux
+        draw_feeder(gate, surface, owner, kind.id == COPPER_WIRE and FEEDER or kind.color)
       end
-    elseif owner.name ~= POLE_NAME or gate.pole.unit_number < owner.unit_number then
-      -- Réseau électrique ordinaire, ou porte d'une autre voie : câble extérieur entre poteaux
-      draw_feeder(gate, surface, owner)
     end
   end
-  table.sort(ids)
-  gate.link_signature = table.concat(ids, ",")
+  gate.link_signature = link_signature(gate)
 end
 
 -- Redessine les portes proches d'une position (liaisons par fils comprises).
@@ -495,25 +509,27 @@ local function redirect_mirror(gate)
   if not is_valid(gate.mirror) or not is_valid(gate.pole) then
     return false
   end
-  local from = gate.mirror.get_wire_connector(COPPER_WIRE, false)
-  if not from or #from.connections == 0 then
-    return false
-  end
-
-  local to = gate.pole.get_wire_connector(COPPER_WIRE, true)
-  local moves = {}
-  for _, connection in pairs(from.connections) do
-    moves[#moves + 1] = {target = connection.target, origin = connection.origin}
-  end
-  for _, move in ipairs(moves) do
-    local owner = move.target.owner
-    local destination = is_valid(owner) and gate_pole_of(owner) or nil
-    from.disconnect_from(move.target, move.origin)
-    if destination and destination ~= gate.pole then
-      to.connect_to(destination.get_wire_connector(COPPER_WIRE, true), false, move.origin)
+  local moved = false
+  for _, kind in ipairs(WIRE_KINDS) do
+    local from = gate.mirror.get_wire_connector(kind.id, false)
+    if from and #from.connections > 0 then
+      local to = gate.pole.get_wire_connector(kind.id, true)
+      local moves = {}
+      for _, connection in pairs(from.connections) do
+        moves[#moves + 1] = {target = connection.target, origin = connection.origin}
+      end
+      for _, move in ipairs(moves) do
+        local owner = move.target.owner
+        local destination = is_valid(owner) and gate_pole_of(owner) or nil
+        from.disconnect_from(move.target, move.origin)
+        if destination and destination ~= gate.pole then
+          to.connect_to(destination.get_wire_connector(kind.id, true), false, move.origin)
+        end
+      end
+      moved = true
     end
   end
-  return true
+  return moved
 end
 
 local function create_gate(pole)

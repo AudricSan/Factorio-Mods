@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.14
+Date: 2026-10-28
+
+  Changes:
+    - Tous les fils d'une porte passent par le centre de la voie, câbles logiques compris. Le fil rouge et le fil vert entre deux portes d'une même voie sont tracés au centre, sous le fil de contact. Vers un poteau ordinaire ou une porte d'une autre voie, ils sont tracés comme câbles extérieurs, en rouge et en vert.
+    - Les fils logiques vanilla ne sont plus dessinés sur les portes. Un fil logique tiré sur le poteau miroir est reporté sur le poteau principal, comme le fil de cuivre.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.13
 Date: 2026-10-28
 
