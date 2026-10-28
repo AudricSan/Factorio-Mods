@@ -12,9 +12,9 @@ local COPPER_WIRE = defines.wire_connector_id.pole_copper
 -- Tous les fils d'une porte passent par le centre de la voie, câbles logiques compris.
 -- `height` : hauteur du fil dans la caténaire ; `color` : couleur des fils tracés.
 local WIRE_KINDS = {
-  {id = COPPER_WIRE, key = "p", height = 2.2, color = {r = 0.886, g = 0.533, b = 0}},
-  {id = defines.wire_connector_id.circuit_red, key = "r", height = 2.0, color = {r = 0.855, g = 0.227, b = 0.114}},
-  {id = defines.wire_connector_id.circuit_green, key = "g", height = 1.85, color = {r = 0.373, g = 0.604, b = 0.231}},
+  {id = COPPER_WIRE, key = "p", height = 2.5, color = {r = 0.886, g = 0.533, b = 0}},
+  {id = defines.wire_connector_id.circuit_red, key = "r", height = 2.35, color = {r = 0.855, g = 0.227, b = 0.114}},
+  {id = defines.wire_connector_id.circuit_green, key = "g", height = 2.2, color = {r = 0.373, g = 0.604, b = 0.231}},
 }
 
 local GROUND_RAIL_TYPES = {"straight-rail", "half-diagonal-rail", "curved-rail-a", "curved-rail-b"}
@@ -34,7 +34,7 @@ local SEGMENT_MARGIN = 4          -- écart maximal d'un rail au câble de caté
 local REFRESH_RADIUS = 24
 
 local BEAM_HEIGHT = 3.0           -- hauteur de la poutre, en cases (sommet du poteau vanilla)
-local WIRE_HEIGHT = 2.2           -- hauteur du fil de contact
+local WIRE_HEIGHT = 2.5           -- hauteur du fil de contact
 local TRUSS_STEP = 0.7
 local BRACE_SPAN = 0.9               -- longueur des jambes de force le long de la poutre
 local BRACE_DROP = 0.9               -- point d'attache des jambes de force sous la poutre
@@ -42,15 +42,15 @@ local BRACE_DROP = 0.9               -- point d'attache des jambes de force sous
 -- Caténaire à double fil : fil porteur en haut (accroché à la poutre) et fil de contact en bas,
 -- reliés par des pendules tous les DROPPER_STEP cases.
 local MESSENGER = {r = 0.72, g = 0.74, b = 0.78}
-local MESSENGER_HEIGHT = 2.6
+local MESSENGER_HEIGHT = 2.8
 local BEAM_THICKNESS = 0.38          -- épaisseur du bras sur l'écran, en cases
 local INSULATOR_SCALE = 0.5
 local DROPPER_STEP = 3
 -- Fils tracés comme les câbles du jeu : couleurs, épaisseur fine et affaissement d'environ 8 %
 -- de la longueur (plafonné) tirés des textures de câble vanilla
 local WIRE_WIDTH = 1.5
-local WIRE_SAG_RATIO = 0.08
-local WIRE_SAG_MAX = 1.0
+local WIRE_SAG_RATIO = 0.04
+local WIRE_SAG_MAX = 0.4
 
 -- Portée affichée par le mode debug (l'alimentation réelle suit la connexion des rails)
 catenary.POWER_REACH = 4
@@ -276,6 +276,8 @@ local function add_line(gate, surface, from, to, color, width)
 end
 
 -- Sprites (découpés dans l'atlas de design) : taille native en cases, avec scale 0.5
+local BEAM_OVERLAP_POLE = 0.12
+local BEAM_OVERLAP_WIRE = 0.18
 local BEAM_SPRITE_LENGTH = 1.656
 local BEAM_SPRITE_THICKNESS = 0.625
 local STRUT_SPRITE_LENGTH = 1.4
@@ -330,6 +332,12 @@ local function draw_beam(gate, surface)
   if length < 0.2 then
     return
   end
+  -- Le bras entre un peu dans le poteau et dépasse un peu le fil, comme sur l'atlas
+  local ux, uy = dx / length, dy / length
+  from = {x = from.x - ux * BEAM_OVERLAP_POLE, y = from.y - uy * BEAM_OVERLAP_POLE}
+  to = {x = to.x + ux * BEAM_OVERLAP_WIRE, y = to.y + uy * BEAM_OVERLAP_WIRE}
+  dx, dy = to.x - from.x, to.y - from.y
+  length = length + BEAM_OVERLAP_POLE + BEAM_OVERLAP_WIRE
 
   add_sprite(
     gate, surface, "er-catenary-beam",

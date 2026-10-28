@@ -19,6 +19,8 @@ local function technology(name, icon, prerequisites, packs, count, time, effects
     type = "technology",
     name = name,
     icons = technology_icon(icon),
+    localised_name = {"technology-name." .. name},
+    localised_description = {"technology-description." .. name},
     prerequisites = prerequisites,
     effects = effects,
     unit = {

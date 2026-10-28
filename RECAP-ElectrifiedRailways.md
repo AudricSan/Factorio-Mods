@@ -1,6 +1,6 @@
 # Electrified Railways — récapitulatif équilibrage
 
-Version du mod : 0.3.24. Les consommations sont **mesurées en jeu** (Factorio 2.1.23, voie droite de 766 cases, locomotive vanilla dont la locomotive électrique reprend la puissance et la physique).
+Version du mod : 0.3.25. Les consommations sont **mesurées en jeu** (Factorio 2.1.23, voie droite de 766 cases, locomotive vanilla dont la locomotive électrique reprend la puissance et la physique).
 
 ## 1. Puissances
 

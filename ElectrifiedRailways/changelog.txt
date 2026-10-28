@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.25
+Date: 2026-10-28
+
+  Features:
+    - Ajoute une image pour la page du mod (thumbnail.png) : la locomotive rouge sous la caténaire.
+  Changes:
+    - Les fils de caténaire sont plus hauts (fil de contact à 2,5 cases, fil porteur à 2,8) et moins affaissés (au plus 0,4 case) : la locomotive passe dessous sans les toucher.
+    - Le bras de la porte entre un peu dans le poteau et dépasse légèrement le fil de contact, pour corriger le petit défaut d'alignement.
+  Bugfixes:
+    - Corrige la clé de traduction inconnue des technologies Batterie et Transformateur de rail (« Unknown key technology-name.er-battery »).
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.24
 Date: 2026-10-28
 
