@@ -101,7 +101,7 @@ Quand tu poses ou retires un rail ou un transformateur, l’alimentation est rec
 
 ## Graphismes
 
-Le poteau de caténaire, le bras en treillis, la jambe de force, l’isolateur, la pince et les pendules viennent de l’atlas de design (dossier `design/`, découpe par `design/make_catenary_sprites.py`). Le bras est étiré et orienté par le script entre le poteau et le centre de la voie. Les fils sont tracés par le script. Les transformateurs reprennent la partie « niveau du rail » des gares vanilla, teintée selon le niveau (bleu, orange, rouge) ; leur orientation suit la voie et ne se change pas à la main. Les images du mod sont l’icône de la locomotive, les sprites de la caténaire et les icônes des objets et des technologies (`design/make_icons.py`).
+Le poteau de caténaire, le bras en treillis, la jambe de force, l’isolateur, la pince et les pendules viennent de l’atlas de design (dossier `design/`, découpe par `design/make_catenary_sprites.py`). Le bras est étiré et orienté par le script entre le poteau et le centre de la voie. Les fils sont tracés par le script avec les couleurs, l’épaisseur et l’affaissement des câbles du jeu. Les transformateurs reprennent la partie « niveau du rail » des gares vanilla, teintée selon le niveau (bleu, orange, rouge) ; leur orientation suit la voie et ne se change pas à la main. Les images du mod sont l’icône de la locomotive, les sprites de la caténaire et les icônes des objets et des technologies (`design/make_icons.py`).
 
 ## Compatibilité
 

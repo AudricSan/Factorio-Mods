@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.21
+Date: 2026-10-28
+
+  Graphics:
+    - Les fils de la caténaire sont tracés comme les câbles du jeu : couleurs du cuivre, du rouge et du vert vanilla, épaisseur fine et affaissement d'environ 8 % de la longueur, plafonné. Le fil de contact reste au centre de la voie.
+    - Le fil porteur suit le fil de contact à distance constante, avec des pendules fins.
+    - Le câble extérieur vers le réseau utilise le même tracé et la même couleur de cuivre.
+    - Les pinces et pendules dessinés sont supprimés, ainsi que leurs deux images.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.20
 Date: 2026-10-28
 

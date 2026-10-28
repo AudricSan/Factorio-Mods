@@ -12,9 +12,9 @@ local COPPER_WIRE = defines.wire_connector_id.pole_copper
 -- Tous les fils d'une porte passent par le centre de la voie, câbles logiques compris.
 -- `height` : hauteur du fil dans la caténaire ; `color` : couleur des fils tracés.
 local WIRE_KINDS = {
-  {id = COPPER_WIRE, key = "p", height = 2.2, color = {r = 0.85, g = 0.5, b = 0.25}},
-  {id = defines.wire_connector_id.circuit_red, key = "r", height = 2.0, color = {r = 0.85, g = 0.2, b = 0.15}},
-  {id = defines.wire_connector_id.circuit_green, key = "g", height = 1.85, color = {r = 0.2, g = 0.7, b = 0.25}},
+  {id = COPPER_WIRE, key = "p", height = 2.2, color = {r = 0.886, g = 0.533, b = 0}},
+  {id = defines.wire_connector_id.circuit_red, key = "r", height = 2.0, color = {r = 0.855, g = 0.227, b = 0.114}},
+  {id = defines.wire_connector_id.circuit_green, key = "g", height = 1.85, color = {r = 0.373, g = 0.604, b = 0.231}},
 }
 
 local GROUND_RAIL_TYPES = {"straight-rail", "half-diagonal-rail", "curved-rail-a", "curved-rail-b"}
@@ -46,7 +46,11 @@ local MESSENGER_HEIGHT = 2.6
 local BEAM_THICKNESS = 0.38          -- épaisseur du bras sur l'écran, en cases
 local INSULATOR_SCALE = 0.5
 local DROPPER_STEP = 3
-local MESSENGER_SAG = 0.012
+-- Fils tracés comme les câbles du jeu : couleurs, épaisseur fine et affaissement d'environ 8 %
+-- de la longueur (plafonné) tirés des textures de câble vanilla
+local WIRE_WIDTH = 1.5
+local WIRE_SAG_RATIO = 0.08
+local WIRE_SAG_MAX = 1.0
 
 -- Portée affichée par le mode debug (l'alimentation réelle suit la connexion des rails)
 catenary.POWER_REACH = 4
@@ -60,14 +64,12 @@ local POLE_WIRE_HEIGHT = {
   ["big-electric-pole"] = 3.9,
   ["substation"] = 3.7,
 }
-local FEEDER_SEGMENTS = 6
-local FEEDER_SAG_BASE = 0.12
-local FEEDER_SAG_PER_TILE = 0.025
+local FEEDER_SEGMENTS = 8
 
-local FEEDER = {r = 0.72, g = 0.43, b = 0.2}
+local FEEDER = {r = 0.886, g = 0.533, b = 0}
 local STEEL = {r = 0.46, g = 0.49, b = 0.54}
 local STEEL_DARK = {r = 0.3, g = 0.32, b = 0.36}
-local COPPER = {r = 0.85, g = 0.5, b = 0.25}
+local COPPER = {r = 0.886, g = 0.533, b = 0}
 local INSULATOR = {r = 0.6, g = 0.28, b = 0.16}
 
 local function is_valid(entity)
@@ -296,6 +298,29 @@ local function turns(dx, dy)
   return (math.atan2(dy, dx) / (2 * math.pi)) % 1
 end
 
+-- Points d'un fil qui s'affaisse entre deux points d'écran, comme un câble vanilla.
+local function sagging_points(from, to, segments)
+  local length = math.sqrt((to.x - from.x) ^ 2 + (to.y - from.y) ^ 2)
+  local sag = math.min(WIRE_SAG_RATIO * length, WIRE_SAG_MAX)
+  local points = {}
+  for i = 0, segments do
+    local t = i / segments
+    points[#points + 1] = {
+      x = from.x + (to.x - from.x) * t,
+      y = from.y + (to.y - from.y) * t + sag * 4 * t * (1 - t),
+    }
+  end
+  return points
+end
+
+local function draw_sagging_wire(gate, surface, from, to, color, segments)
+  local points = sagging_points(from, to, segments)
+  for i = 2, #points do
+    add_line(gate, surface, points[i - 1], points[i], color, WIRE_WIDTH)
+  end
+  return points
+end
+
 -- Bras en treillis du poteau jusqu'au centre de la voie, avec une jambe de force en dessous.
 local function draw_beam(gate, surface)
   local from = top(gate.pole.position, BEAM_HEIGHT)
@@ -333,9 +358,7 @@ local function draw_contact(gate, surface)
   local wire_point = top(center, WIRE_HEIGHT)
 
   add_sprite(gate, surface, "er-catenary-insulator", top(center, BEAM_HEIGHT - 0.2), 0, INSULATOR_SCALE)
-  add_line(gate, surface, top(center, MESSENGER_HEIGHT), wire_point, STEEL_DARK, 1.5)
-  add_sprite(gate, surface, "er-catenary-clamp", top(center, MESSENGER_HEIGHT), 0, 0.5)
-  add_sprite(gate, surface, "er-catenary-dropper", top(center, WIRE_HEIGHT + 0.15), 0, 0.5)
+  add_line(gate, surface, top(center, MESSENGER_HEIGHT), wire_point, MESSENGER, WIRE_WIDTH)
 end
 
 -- Portes reliées à `gate` par un câble de cuivre (une vraie connexion électrique, qu'on peut
@@ -406,45 +429,24 @@ end
 -- Caténaire entre deux portes : fil de contact droit au centre de la voie, fil porteur au-dessus
 -- avec un léger affaissement, et des pendules qui les relient.
 local function draw_double_wire(gate, surface, from_center, to_center)
-  local dx, dy = to_center.x - from_center.x, to_center.y - from_center.y
-  local length = math.sqrt(dx * dx + dy * dy)
+  local length = math.sqrt((to_center.x - from_center.x) ^ 2 + (to_center.y - from_center.y) ^ 2)
   local segments = math.max(2, math.ceil(length / DROPPER_STEP))
-  local sag = math.min(0.45, 0.05 + MESSENGER_SAG * length)
 
-  add_line(gate, surface, top(from_center, WIRE_HEIGHT), top(to_center, WIRE_HEIGHT), COPPER, 2)
-
-  local previous = top(from_center, MESSENGER_HEIGHT)
-  for i = 1, segments do
-    local t = i / segments
-    local base = {x = from_center.x + dx * t, y = from_center.y + dy * t}
-    local point = top(base, MESSENGER_HEIGHT)
-    point.y = point.y + sag * 4 * t * (1 - t)
-    add_line(gate, surface, previous, point, MESSENGER, 1.5)
-    if i < segments then
-      add_line(gate, surface, point, top(base, WIRE_HEIGHT), STEEL_DARK, 1)
-    end
-    previous = point
+  local contact = draw_sagging_wire(gate, surface, top(from_center, WIRE_HEIGHT), top(to_center, WIRE_HEIGHT), COPPER, segments)
+  local messenger = draw_sagging_wire(gate, surface, top(from_center, MESSENGER_HEIGHT), top(to_center, MESSENGER_HEIGHT), MESSENGER, segments)
+  for i = 2, #contact - 1 do
+    add_line(gate, surface, messenger[i], contact[i], MESSENGER, 1)
   end
 end
 
 -- Câble extérieur entre le sommet de la porte et un autre poteau, avec l'affaissement d'un
 -- câble de cuivre du jeu.
 local function draw_feeder(gate, surface, owner, color)
-  local from = top(gate.pole.position, GATE_WIRE_HEIGHT)
-  local to = top(owner.position, wire_attach_height(owner))
-  local length = math.sqrt((to.x - from.x) ^ 2 + (to.y - from.y) ^ 2)
-  local sag = FEEDER_SAG_BASE + FEEDER_SAG_PER_TILE * length
-
-  local previous = from
-  for i = 1, FEEDER_SEGMENTS do
-    local t = i / FEEDER_SEGMENTS
-    local point = {
-      x = from.x + (to.x - from.x) * t,
-      y = from.y + (to.y - from.y) * t + sag * 4 * t * (1 - t),
-    }
-    add_line(gate, surface, previous, point, color or FEEDER, 1.5)
-    previous = point
-  end
+  draw_sagging_wire(
+    gate, surface,
+    top(gate.pole.position, GATE_WIRE_HEIGHT), top(owner.position, wire_attach_height(owner)),
+    color or FEEDER, FEEDER_SEGMENTS
+  )
 end
 
 local function draw_gate(gate)
@@ -468,7 +470,11 @@ local function draw_gate(gate)
           if kind.id == COPPER_WIRE then
             draw_double_wire(gate, surface, gate.center, other.center)
           else
-            add_line(gate, surface, top(gate.center, kind.height), top(other.center, kind.height), kind.color, 1.5)
+            local length = math.sqrt((other.center.x - gate.center.x) ^ 2 + (other.center.y - gate.center.y) ^ 2)
+            draw_sagging_wire(
+              gate, surface, top(gate.center, kind.height), top(other.center, kind.height),
+              kind.color, math.max(2, math.ceil(length / DROPPER_STEP))
+            )
           end
         end
       elseif owner.name ~= POLE_NAME or gate.pole.unit_number < owner.unit_number then
