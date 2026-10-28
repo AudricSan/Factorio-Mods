@@ -24,7 +24,7 @@ pole.name = "er-catenary-pole"
 pole.minable = {mining_time = 0.2, result = "er-catenary-pole"}
 pole.fast_replaceable_group = nil
 pole.next_upgrade = nil
-pole.maximum_wire_distance = 9
+pole.maximum_wire_distance = 30
 -- Zone d'alimentation minimale : seule la porte, pas les machines alentour.
 pole.supply_area_distance = 1
 -- Le câble de cuivre vanilla n'est pas dessiné : c'est le câble de caténaire, tracé par le

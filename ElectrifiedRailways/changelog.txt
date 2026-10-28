@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.11
+Date: 2026-10-28
+
+  Changes:
+    - La distance maximale entre deux portes de caténaire passe de 9 à 30 cases. Les portes peuvent être beaucoup plus espacées le long d'une voie.
+    - Le câble de caténaire alimente toutes les voies sous lui sur toute sa longueur, jusqu'à 24 rails de distance sur la voie.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.10
 Date: 2026-10-28
 

@@ -17,8 +17,8 @@ local MAX_SIDE_DISTANCE = 4.5
 local CURVE_SAMPLES = 16
 local REFINE_STEPS = 12
 local POWER_DEPTH = 2             -- nombre de rails de part et d'autre qui reçoivent l'énergie
-local LINK_DEPTH = 10             -- profondeur de recherche de la porte voisine sur la même voie
-local POWER_SEARCH_RADIUS = 9
+local LINK_DEPTH = 24             -- profondeur de recherche de la porte voisine sur la même voie
+local POWER_SEARCH_RADIUS = 34     -- portée du câble (30) + marge
 local SEGMENT_MARGIN = 4          -- écart maximal d'un rail au câble de caténaire pour être alimenté
 local REFRESH_RADIUS = 24
 
