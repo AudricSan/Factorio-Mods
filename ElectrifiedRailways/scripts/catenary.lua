@@ -26,6 +26,15 @@ local REFRESH_RADIUS = 24
 local BEAM_HEIGHT = 3.0           -- hauteur de la poutre, en cases (sommet du poteau vanilla)
 local WIRE_HEIGHT = 2.2           -- hauteur du fil de contact
 local TRUSS_STEP = 0.7
+local BRACE_SPAN = 0.9               -- longueur des jambes de force le long de la poutre
+local BRACE_DROP = 0.9               -- point d'attache des jambes de force sous la poutre
+
+-- Caténaire à double fil : fil porteur en haut (accroché à la poutre) et fil de contact en bas,
+-- reliés par des pendules tous les DROPPER_STEP cases.
+local MESSENGER = {r = 0.72, g = 0.74, b = 0.78}
+local MESSENGER_HEIGHT = 2.8
+local DROPPER_STEP = 3
+local MESSENGER_SAG = 0.012
 
 -- Portée affichée par le mode debug (l'alimentation réelle suit la connexion des rails)
 catenary.POWER_REACH = 4
@@ -286,6 +295,14 @@ local function draw_beam(gate, surface)
     end
     add_line(gate, surface, from, to, STEEL_DARK, 1.5)
   end
+
+  -- Jambes de force : renfort oblique entre chaque poteau et la poutre
+  local length_beam = math.sqrt(dx * dx + dy * dy)
+  if length_beam > 2 * BRACE_SPAN then
+    local ux, uy = dx / length_beam, dy / length_beam
+    add_line(gate, surface, top(a, BEAM_HEIGHT - BRACE_DROP), {x = low_a.x + ux * BRACE_SPAN, y = low_a.y + uy * BRACE_SPAN}, STEEL_DARK, 2)
+    add_line(gate, surface, top(b, BEAM_HEIGHT - BRACE_DROP), {x = low_b.x - ux * BRACE_SPAN, y = low_b.y - uy * BRACE_SPAN}, STEEL_DARK, 2)
+  end
 end
 
 -- Suspente et fil de contact au centre de la voie.
@@ -376,6 +393,30 @@ local function wire_attach_height(entity)
   return POLE_WIRE_HEIGHT[entity.name] or DEFAULT_POLE_WIRE_HEIGHT
 end
 
+-- Caténaire entre deux portes : fil de contact droit au centre de la voie, fil porteur au-dessus
+-- avec un léger affaissement, et des pendules qui les relient.
+local function draw_double_wire(gate, surface, from_center, to_center)
+  local dx, dy = to_center.x - from_center.x, to_center.y - from_center.y
+  local length = math.sqrt(dx * dx + dy * dy)
+  local segments = math.max(2, math.ceil(length / DROPPER_STEP))
+  local sag = math.min(0.45, 0.05 + MESSENGER_SAG * length)
+
+  add_line(gate, surface, top(from_center, WIRE_HEIGHT), top(to_center, WIRE_HEIGHT), COPPER, 2)
+
+  local previous = top(from_center, MESSENGER_HEIGHT)
+  for i = 1, segments do
+    local t = i / segments
+    local base = {x = from_center.x + dx * t, y = from_center.y + dy * t}
+    local point = top(base, MESSENGER_HEIGHT)
+    point.y = point.y + sag * 4 * t * (1 - t)
+    add_line(gate, surface, previous, point, MESSENGER, 1.5)
+    if i < segments then
+      add_line(gate, surface, point, top(base, WIRE_HEIGHT), STEEL_DARK, 1)
+    end
+    previous = point
+  end
+end
+
 -- Câble extérieur entre le sommet de la porte et un autre poteau, avec l'affaissement d'un
 -- câble de cuivre du jeu.
 local function draw_feeder(gate, surface, owner)
@@ -414,11 +455,7 @@ local function draw_gate(gate)
       -- Deux portes sur la même voie : câble de caténaire au centre de la voie, tracé une
       -- seule fois par paire
       if gate.pole.unit_number < owner.unit_number then
-        add_line(
-          gate, surface,
-          top(gate.center, WIRE_HEIGHT), top(other.center, WIRE_HEIGHT),
-          COPPER, 2
-        )
+        draw_double_wire(gate, surface, gate.center, other.center)
       end
     elseif owner.name ~= POLE_NAME or gate.pole.unit_number < owner.unit_number then
       -- Réseau électrique ordinaire, ou porte d'une autre voie : câble extérieur entre poteaux

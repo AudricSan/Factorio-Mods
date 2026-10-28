@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.13
+Date: 2026-10-28
+
+  Graphics:
+    - La caténaire entre deux portes est à double fil : un fil de contact en cuivre, droit, au centre de la voie, et un fil porteur en acier au-dessus, légèrement affaissé, relié au fil de contact par des pendules tous les 3 cases.
+    - La poutre de la porte reçoit deux jambes de force obliques qui la relient aux poteaux.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.12
 Date: 2026-10-28
 
