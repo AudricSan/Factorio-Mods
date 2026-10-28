@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.19
+Date: 2026-10-28
+
+  Changes:
+    - Le transformateur de rail utilise le vrai système de pose des gares : l'objet pose un emplacement qui est une copie de la gare, avec son aperçu collé à la voie, son orientation et un seul objet par emplacement. Le script le remplace aussitôt par le transformateur, à la même place et dans la même orientation.
+    - Les règles de la 0.3.7 restent en filet de sécurité : sans rail droit à côté, la pose est refusée et l'objet est rendu.
+    - La zone de collision du transformateur est celle de la gare, pour que la mise à niveau par-dessus fonctionne avec les emplacements.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.18
 Date: 2026-10-28
 

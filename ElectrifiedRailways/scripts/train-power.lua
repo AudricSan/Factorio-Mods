@@ -200,6 +200,12 @@ local function register_built_entity(event)
 
   if entity.name == LOCOMOTIVE_NAME then
     register_locomotive(entity)
+  elseif entity.name:find("^er%-rail%-transformer%-%d%-slot$") then
+    -- Emplacement posé comme une gare : remplacé par le transformateur
+    local placed = transformer_placement.replace_slot(entity, event.player_index)
+    if placed then
+      register_transformer(placed)
+    end
   elseif TRANSFORMER_NAMES[entity.name] then
     -- Se colle au rail voisin comme une gare, ou refuse la pose
     local placed = transformer_placement.snap(entity, event.player_index)

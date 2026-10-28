@@ -84,12 +84,11 @@ for index, tier in ipairs(tiers) do
     max_health = 250,
     corpse = train_stop.corpse,
     dying_explosion = train_stop.dying_explosion,
-    collision_box = {{-0.5, -0.5}, {0.5, 0.5}},
+    collision_box = train_stop.collision_box,
     selection_box = {{-0.9, -0.9}, {0.9, 0.9}},
     -- L'orientation est imposée par le script selon la voie voisine, comme pour une gare
     rotatable = false,
     fast_replaceable_group = "er-rail-transformer",
-    next_upgrade = next_name,
     energy_source = {
       type = "electric",
       buffer_capacity = buffer,
@@ -104,13 +103,35 @@ for index, tier in ipairs(tiers) do
     animations = tinted_rail_overlay(tier_tints[index]),
   })
 
+  -- Emplacement de pose : une copie de la gare, pour hériter de son système de pose (aperçu
+  -- collé à la voie, orientation, un seul objet par emplacement). Dès qu'il est posé, le
+  -- script le remplace par le transformateur (voir scripts/transformer.lua).
+  local slot = table.deepcopy(train_stop)
+  slot.name = name .. "-slot"
+  slot.icons = table.deepcopy(icons)
+  slot.icon = nil
+  slot.icon_size = nil
+  slot.icon_mipmaps = nil
+  slot.minable = {mining_time = 0.3, result = name}
+  slot.fast_replaceable_group = "er-rail-transformer"
+  slot.next_upgrade = tiers[index + 1] and (next_name .. "-slot") or nil
+  slot.factoriopedia_simulation = nil
+  slot.hidden_in_factoriopedia = true
+  slot.chart_name = false
+  slot.animations = nil
+  slot.top_animations = nil
+  slot.light1 = nil
+  slot.light2 = nil
+  slot.rail_overlay_animations = tinted_rail_overlay(tier_tints[index])
+  table.insert(prototypes, slot)
+
   table.insert(prototypes, {
     type = "item",
     name = name,
     icons = table.deepcopy(icons),
     subgroup = "er-catenary",
     order = "b[transformer]-" .. tier.level,
-    place_result = name,
+    place_result = name .. "-slot",
     stack_size = 20,
   })
 

@@ -131,6 +131,32 @@ function transformer.snap(entity, player_index)
   })
 end
 
+-- Le joueur pose l'emplacement (copie d'une gare, qui se colle à la voie) : il est remplacé
+-- aussitôt par le transformateur, à la même place et dans la même orientation. Retourne
+-- l'entité à enregistrer, ou nil.
+function transformer.replace_slot(slot, player_index)
+  if not is_valid(slot) then
+    return nil
+  end
+  local surface, position = slot.surface, {x = slot.position.x, y = slot.position.y}
+  local direction, force = slot.direction, slot.force
+  local name = slot.name:gsub("%-slot$", "")
+  slot.destroy()
+
+  local placed = surface.create_entity({
+    name = name,
+    position = position,
+    direction = direction,
+    force = force,
+    raise_built = false,
+  })
+  if not placed then
+    refund(surface, position, name, player_index, "er-message.transformer-blocked")
+    return nil
+  end
+  return transformer.snap(placed, player_index)
+end
+
 -- Rails alimentés directement : les rails droits sur la case voisine de ce transformateur.
 function transformer.adjacent_rails(entity)
   local result = {}
