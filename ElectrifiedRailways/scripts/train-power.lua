@@ -1,4 +1,5 @@
 local catenary = require("scripts.catenary")
+local transformer_placement = require("scripts.transformer")
 
 local LOCOMOTIVE_NAME = "er-electric-locomotive"
 local CHARGER_NAME = "er-mobile-charger"
@@ -6,7 +7,6 @@ local FUEL_NAME = "er-electric-charge"
 local ENGINE_BUFFER = 100000
 local FLUID_WEIGHT_PER_UNIT = 0.25
 local MAX_LOAD_MULTIPLIER = 1.5
-local TRANSFORMER_RAIL_RADIUS = 4
 local REBUILD_CHECK_INTERVAL = 30
 local FORCED_REBUILD_INTERVAL = 600
 
@@ -39,7 +39,7 @@ end
 -- Commande /er-debug : affichage des rails alimentés et non alimentés
 require("scripts.debug").setup({
   rail_types = rail_types,
-  transformer_radius = TRANSFORMER_RAIL_RADIUS,
+  transformer_radius = transformer_placement.ADJACENT_SEARCH_RADIUS,
   gate_reach = catenary.POWER_REACH,
 })
 
@@ -111,11 +111,8 @@ local function rebuild_rail_power_map()
 
   for unit_number, transformer in pairs(storage.rail_transformers) do
     if is_valid(transformer) then
-      local nearby_rails = transformer.surface.find_entities_filtered({
-        type = rail_types,
-        position = transformer.position,
-        radius = TRANSFORMER_RAIL_RADIUS,
-      })
+      -- Rails de départ : ceux de la case voisine du transformateur, comme pour une gare
+      local nearby_rails = transformer_placement.adjacent_rails(transformer)
       local connected_rails = collect_connected_rails(nearby_rails)
 
       -- Données pour le mode debug : rails de départ et nombre de rails alimentés
@@ -201,7 +198,11 @@ local function register_built_entity(event)
   if entity.name == LOCOMOTIVE_NAME then
     register_locomotive(entity)
   elseif TRANSFORMER_NAMES[entity.name] then
-    register_transformer(entity)
+    -- Se colle au rail voisin comme une gare, ou refuse la pose
+    local placed = transformer_placement.snap(entity, event.player_index)
+    if placed then
+      register_transformer(placed)
+    end
   elseif entity.name == "er-catenary-pole" then
     catenary.on_built(entity, event.player_index)
   elseif rail_type_set[entity.type] then

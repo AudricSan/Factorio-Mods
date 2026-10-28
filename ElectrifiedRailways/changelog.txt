@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.7
+Date: 2026-10-28
+
+  Changes:
+    - Le transformateur de rail se place comme une gare : il se colle à la case voisine d'un rail droit et se tourne vers la voie, sur les voies nord-sud comme est-ouest.
+    - Sans rail droit à côté, la pose est refusée avec un message et l'objet est rendu au joueur. Si la place est prise, le refus est aussi expliqué.
+    - Un transformateur alimente le rail voisin et tous les rails qui y sont connectés. Il ne capte plus les voies parallèles proches.
+    - Les transformateurs ne se font plus pivoter à la main : leur orientation suit la voie.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.6
 Date: 2026-10-28
 

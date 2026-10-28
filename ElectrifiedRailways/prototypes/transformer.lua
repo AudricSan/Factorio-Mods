@@ -86,7 +86,8 @@ for index, tier in ipairs(tiers) do
     dying_explosion = train_stop.dying_explosion,
     collision_box = {{-0.5, -0.5}, {0.5, 0.5}},
     selection_box = {{-0.9, -0.9}, {0.9, 0.9}},
-    rotatable = true,
+    -- L'orientation est imposée par le script selon la voie voisine, comme pour une gare
+    rotatable = false,
     fast_replaceable_group = "er-rail-transformer",
     next_upgrade = next_name,
     energy_source = {

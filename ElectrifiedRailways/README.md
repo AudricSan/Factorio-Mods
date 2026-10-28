@@ -6,7 +6,7 @@ Electrified Railways réunit dans un seul mod Factorio 2.1 une locomotive élect
 
 - Le mod ajoute une seule locomotive électrique, avec la vitesse et la puissance de la locomotive vanilla comme base d’équilibrage.
 - Sa grille d’équipement de 2×2 accepte une batterie à la fois. Les batteries I, II et III sont des améliorations de capacité qui se remplacent mutuellement.
-- **Transformateur de rail** (3 niveaux) : se pose à côté d’une voie et se relie au réseau électrique par un poteau. Il alimente **tous les rails connectés** à cette voie, au sol comme surélevés, sans limite de longueur. Le niveau fixe la puissance maximale, partagée entre tous les trains du réseau de rails : I = 5 MW, II = 20 MW, III = 60 MW. On passe d’un niveau au suivant en posant le nouveau par-dessus.
+- **Transformateur de rail** (3 niveaux) : se place comme une gare. Tu le poses près d’un rail droit, à 1 à 3 cases de son axe : il se colle automatiquement à la case voisine et se tourne vers la voie, sur les voies nord-sud comme est-ouest. Sans rail droit à côté, la pose est refusée avec un message et l’objet t’est rendu. Il se relie au réseau électrique par un poteau. Il alimente **tous les rails connectés** à cette voie, au sol comme surélevés, sans limite de longueur. Le niveau fixe la puissance maximale, partagée entre tous les trains du réseau de rails : I = 5 MW, II = 20 MW, III = 60 MW. On passe d’un niveau au suivant en posant le nouveau par-dessus.
 - **Porte de caténaire** : on pose un poteau de caténaire à côté d’une voie droite, à 1 à 4 cases de son axe. Le mod détecte si le rail est à gauche ou à droite du poteau et pose automatiquement un poteau miroir de l’autre côté, avec une poutre en treillis au-dessus de la voie et les fils au centre de la voie, reliés d’une porte à la suivante. Une porte n’alimente que le rail qu’elle enjambe. Le poteau se relie au réseau par des câbles, jusqu’à 9 cases d’écart. Seules les portes alimentent les trains : les poteaux électriques ordinaires ne comptent plus. La caténaire n’alimente pas les rails surélevés ni les voies en courbe ou en diagonale (la porte exige une voie droite).
 - Les rails sont les rails vanilla. Il n’y a plus de rail électrifié dédié.
 - Les batteries se rechargent sous une caténaire, sur un rail alimenté par un transformateur ou dans une gare alimentée.
@@ -101,7 +101,7 @@ Quand tu poses ou retires un rail ou un transformateur, l’alimentation est rec
 
 ## Graphismes
 
-Le poteau de caténaire reprend le poteau moyen du jeu de base, légèrement teinté cuivre. La poutre, les suspentes et les fils de la porte sont tracés par le script. Les transformateurs reprennent la partie « niveau du rail » des gares vanilla, teintée selon le niveau (bleu, orange, rouge) ; on les fait pivoter avec la touche de rotation. Aucune image n’est dessinée pour le mod, sauf l’icône de la locomotive.
+Le poteau de caténaire reprend le poteau moyen du jeu de base, légèrement teinté cuivre. La poutre, les suspentes et les fils de la porte sont tracés par le script. Les transformateurs reprennent la partie « niveau du rail » des gares vanilla, teintée selon le niveau (bleu, orange, rouge) ; leur orientation suit la voie et ne se change pas à la main. Aucune image n’est dessinée pour le mod, sauf l’icône de la locomotive.
 
 ## Compatibilité
 
