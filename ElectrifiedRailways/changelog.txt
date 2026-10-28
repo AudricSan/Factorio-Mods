@@ -1,0 +1,94 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.3.6
+Date: 2026-10-28
+
+  Changes:
+    - Supprime trois images inutilisées (tech.png et les deux transformer-rail-part.png). Le zip est plus léger.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.5
+Date: 2026-10-28
+
+  Features:
+    - Ajoute la commande /er-debug, qui affiche autour du joueur les rails alimentés par un transformateur (vert, cyan si plusieurs transformateurs), les rails non alimentés (rouge), la portée des transformateurs et des portes de caténaire. Chaque transformateur affiche sa puissance, son nombre de rails alimentés et son tampon d'énergie.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.4
+Date: 2026-10-28
+
+  Features:
+    - Le poteau de caténaire devient une porte de caténaire. Pose un poteau à côté d'une voie droite : un poteau miroir apparaît de l'autre côté, avec une poutre en treillis au-dessus de la voie et les fils au centre de la voie, reliés d'une porte à la suivante.
+    - Le mod détecte si le rail est à gauche ou à droite du poteau.
+  Changes:
+    - Une porte n'alimente que le rail qu'elle enjambe. Sa zone d'alimentation électrique est réduite au minimum.
+    - Un message s'affiche si le poteau est posé sans voie droite à côté.
+    - Les portes posées en 0.3.2 sont reconstruites au chargement de la partie.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.3
+Date: 2026-10-28
+
+  Graphics:
+    - Les transformateurs de rail reprennent la partie « niveau du rail » des gares vanilla, avec ses 4 orientations. Ils se font pivoter avec la touche de rotation.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.2
+Date: 2026-10-28
+
+  Graphics:
+    - Le poteau de caténaire reprend le poteau moyen du jeu de base, teinté cuivre.
+    - Les transformateurs reprennent la sous-station vanilla, teintée par niveau (bleu, orange, rouge).
+    - Plus aucun graphisme dessiné pour le mod, sauf l'icône de la locomotive.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.1
+Date: 2026-10-28
+
+  Balance:
+    - Capacités des batteries : I = 5 MJ, II = 19 MJ, III = 124 MJ (avant : 15, 30 et 60 MJ). Pour un train de loco + 3 wagons à vide, elles couvrent environ 320, 1 230 et 8 020 cases.
+    - Le plafond du multiplicateur de chargement passe de 2,5× à 1,5×.
+  Changes:
+    - Le tableau de consommation du README repose sur des mesures faites en jeu, selon le nombre de wagons.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: 2026-10-28
+
+  Features:
+    - Ajoute trois niveaux de transformateur de rail (5, 20 et 60 MW). Un transformateur posé à côté d'une voie alimente tous les rails connectés, au sol comme surélevés.
+    - Ajoute trois recherches, Transformateur de rail I à III.
+    - Ajoute un tableau de consommation au README.
+  Changes:
+    - Nouveau poteau de caténaire, plus simple, qui remplace les portiques.
+    - Seuls les poteaux de caténaire alimentent les trains : les petits poteaux électriques ne comptent plus.
+    - Les rails utilisés sont les rails vanilla.
+  Removed:
+    - Supprime les rails électrifiés dédiés, les rampes électrifiées et la recherche Rails électrifiés. Ces rails posés dans une ancienne partie disparaissent.
+    - Supprime les portiques de caténaire de la 0.2.0.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.0
+Date: 2026-10-28
+
+  Features:
+    - Ajoute deux portiques de caténaire visibles : voie unique et double voie.
+    - Les portiques alimentent les locomotives sur les rails au sol dans leur zone d'alimentation.
+    - Les recettes des portiques sont débloquées par la recherche Traction électrique.
+  Changes:
+    - Les petits poteaux électriques alimentent encore la caténaire pour les parties créées en 0.1.x.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.1
+Date: 2026-10-27
+
+  Balance:
+    - Divise par deux la capacité des trois batteries de train.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 2026-10-27
+
+  Features:
+    - Ajoute une locomotive électrique avec une grille pour une batterie rechargeable.
+    - Ajoute trois niveaux de batterie, la caténaire au sol et les rails électrifiés.
+    - Ajoute la compatibilité facultative avec Space Age et Elevated Rails.

@@ -1,0 +1,6 @@
+require("prototypes.groups")
+require("prototypes.electric-locomotive")
+require("prototypes.batteries")
+require("prototypes.catenary")
+require("prototypes.transformer")
+require("prototypes.technology")

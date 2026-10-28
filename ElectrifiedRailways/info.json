@@ -1,0 +1,13 @@
+{
+  "name": "ElectrifiedRailways",
+  "version": "0.3.6",
+  "title": "Electrified Railways",
+  "author": "AudricSan",
+  "description": "A single electric locomotive powered by catenary poles, batteries, and rail transformers that power every connected rail.",
+  "factorio_version": "2.1",
+  "dependencies": [
+    "base >= 2.1.0",
+    "? space-age",
+    "? elevated-rails"
+  ]
+}
