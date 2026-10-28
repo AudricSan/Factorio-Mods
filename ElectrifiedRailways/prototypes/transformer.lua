@@ -4,7 +4,7 @@
 local tiers = {
   {
     level = 1,
-    power = "5MW",
+    power = "2MW",
     ingredients = {
       {type = "item", name = "steel-plate", amount = 10},
       {type = "item", name = "copper-cable", amount = 30},
@@ -13,7 +13,7 @@ local tiers = {
   },
   {
     level = 2,
-    power = "20MW",
+    power = "40MW",
     ingredients = {
       {type = "item", name = "er-rail-transformer-1", amount = 1},
       {type = "item", name = "steel-plate", amount = 20},
@@ -23,7 +23,7 @@ local tiers = {
   },
   {
     level = 3,
-    power = "60MW",
+    power = "100MW",
     ingredients = {
       {type = "item", name = "er-rail-transformer-2", amount = 1},
       {type = "item", name = "steel-plate", amount = 40},

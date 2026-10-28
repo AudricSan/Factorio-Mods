@@ -1,6 +1,6 @@
 # Electrified Railways — récapitulatif équilibrage
 
-Version du mod : 0.3.21. Les consommations sont **mesurées en jeu** (Factorio 2.1.23, voie droite de 766 cases, locomotive vanilla dont la locomotive électrique reprend la puissance et la physique).
+Version du mod : 0.3.22. Les consommations sont **mesurées en jeu** (Factorio 2.1.23, voie droite de 766 cases, locomotive vanilla dont la locomotive électrique reprend la puissance et la physique).
 
 ## 1. Puissances
 
@@ -9,18 +9,18 @@ Version du mod : 0.3.21. Les consommations sont **mesurées en jeu** (Factorio 2
 | Locomotive électrique | 600 kW | Puissance maximale en accélération, à vide |
 | Locomotive, chargement maximal | 900 kW | Multiplicateur de chargement plafonné à ×1,5 |
 | Recharge d'une batterie | 2 MW | Débit maximal sous caténaire, sur rail alimenté ou en gare alimentée |
-| Transformateur I | 5 MW | Partagé entre tous les trains du réseau de rails connecté |
-| Transformateur II | 20 MW | Idem |
-| Transformateur III | 60 MW | Idem |
+| Transformateur I | 2 MW | Partagé entre tous les trains du réseau de rails connecté |
+| Transformateur II | 40 MW | Idem |
+| Transformateur III | 100 MW | Idem |
 | Poteau de caténaire | 2 MW par locomotive | Alimente le rail de la porte et les voies sous le fil de contact, jusqu'à 30 cases entre deux portes |
 
 ### Locomotives en pleine puissance par transformateur
 
 | Transformateur | Puissance | Locomotives à vide (600 kW) | Locomotives chargées (900 kW) |
 | --- | --- | --- | --- |
-| I | 5 MW | 8 | 5 |
-| II | 20 MW | 33 | 22 |
-| III | 60 MW | 100 | 66 |
+| I | 2 MW | 3 | 2 |
+| II | 40 MW | 66 | 44 |
+| III | 100 MW | 166 | 111 |
 
 ## 2. Capacité des batteries
 

@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.22
+Date: 2026-10-28
+
+  Balance:
+    - Puissance des transformateurs de rail : I = 2 MW, II = 40 MW, III = 100 MW (avant : 5, 20 et 60 MW). Un transformateur I alimente 3 locomotives à pleine puissance à vide (2 au plafond), le II 66 (44), le III 166 (111).
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.21
 Date: 2026-10-28
 
