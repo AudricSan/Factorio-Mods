@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.12
+Date: 2026-10-28
+
+  Changes:
+    - Les deux poteaux d'une porte de caténaire sont sélectionnables. On peut tirer un câble depuis l'un ou l'autre : une liaison faite sur le poteau miroir est reportée sur le poteau principal.
+    - Retirer l'un des deux poteaux retire toute la porte, et un seul objet est rendu.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.11
 Date: 2026-10-28
 

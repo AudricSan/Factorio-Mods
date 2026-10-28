@@ -7,7 +7,8 @@
 local catenary = {}
 
 local POLE_NAME = "er-catenary-pole"
-local MIRROR_NAME = "er-catenary-mirror"
+local MIRROR_NAME = "er-catenary-mirror-pole"
+local COPPER_WIRE = defines.wire_connector_id.pole_copper
 
 local GROUND_RAIL_TYPES = {"straight-rail", "half-diagonal-rail", "curved-rail-a", "curved-rail-b"}
 
@@ -55,6 +56,7 @@ end
 local function ensure_storage()
   storage.catenary_gates = storage.catenary_gates or {}
   storage.catenary_epoch = storage.catenary_epoch or 0
+  storage.catenary_mirrors = storage.catenary_mirrors or {}
 end
 
 -- Géométrie des rails ------------------------------------------------------------------
@@ -440,6 +442,43 @@ end
 
 -- Portes -----------------------------------------------------------------------------------
 
+-- Poteau principal de la porte à laquelle appartient `owner` (poteau ou miroir), ou `owner`
+-- lui-même s'il n'appartient à aucune porte.
+local function gate_pole_of(owner)
+  if owner.name == MIRROR_NAME then
+    local gate = storage.catenary_gates[storage.catenary_mirrors[owner.unit_number] or -1]
+    return is_valid(gate and gate.pole) and gate.pole or nil
+  end
+  return owner
+end
+
+-- Le miroir ne porte aucun câble : ceux qu'on y tire (ou qu'il prend à la pose) sont reportés
+-- sur le poteau principal. Renvoie true si une liaison a été déplacée ou retirée.
+local function redirect_mirror(gate)
+  if not is_valid(gate.mirror) or not is_valid(gate.pole) then
+    return false
+  end
+  local from = gate.mirror.get_wire_connector(COPPER_WIRE, false)
+  if not from or #from.connections == 0 then
+    return false
+  end
+
+  local to = gate.pole.get_wire_connector(COPPER_WIRE, true)
+  local moves = {}
+  for _, connection in pairs(from.connections) do
+    moves[#moves + 1] = {target = connection.target, origin = connection.origin}
+  end
+  for _, move in ipairs(moves) do
+    local owner = move.target.owner
+    local destination = is_valid(owner) and gate_pole_of(owner) or nil
+    from.disconnect_from(move.target, move.origin)
+    if destination and destination ~= gate.pole then
+      to.connect_to(destination.get_wire_connector(COPPER_WIRE, true), false, move.origin)
+    end
+  end
+  return true
+end
+
 local function create_gate(pole)
   local track = find_track(pole)
   if not track then
@@ -461,7 +500,7 @@ local function create_gate(pole)
   end
   mirror.destructible = false
 
-  storage.catenary_gates[pole.unit_number] = {
+  local gate = {
     pole = pole,
     mirror = mirror,
     center = track.center,
@@ -471,6 +510,9 @@ local function create_gate(pole)
     renders = {},
     epoch = -1,
   }
+  storage.catenary_gates[pole.unit_number] = gate
+  storage.catenary_mirrors[mirror.unit_number] = pole.unit_number
+  redirect_mirror(gate)
   return true
 end
 
@@ -519,8 +561,11 @@ function catenary.poll_wires()
   ensure_storage()
   local changed = {}
   for _, gate in pairs(storage.catenary_gates) do
-    if is_valid(gate.pole) and is_valid(gate.mirror) and link_signature(gate) ~= gate.link_signature then
-      changed[#changed + 1] = gate
+    if is_valid(gate.pole) and is_valid(gate.mirror) then
+      redirect_mirror(gate)
+      if link_signature(gate) ~= gate.link_signature then
+        changed[#changed + 1] = gate
+      end
     end
   end
 
@@ -556,7 +601,7 @@ function catenary.on_built(entity, player_index)
   end
 end
 
-function catenary.on_removed(entity)
+function catenary.on_removed(entity, keep_mirror)
   ensure_storage()
   if not entity or not entity.unit_number then
     return
@@ -568,12 +613,31 @@ function catenary.on_removed(entity)
 
   clear_renders(gate)
   if is_valid(gate.mirror) then
-    gate.mirror.destroy()
+    storage.catenary_mirrors[gate.mirror.unit_number] = nil
+    if not keep_mirror then
+      gate.mirror.destroy()
+    end
   end
   storage.catenary_gates[entity.unit_number] = nil
 
   if entity.valid then
     refresh_around(entity.surface, entity.position)
+  end
+end
+
+-- Le joueur (ou un robot) retire le poteau miroir : la porte disparaît avec lui. Le miroir
+-- rend l'objet, le poteau principal est détruit sans en rendre un second.
+function catenary.on_mirror_removed(mirror)
+  ensure_storage()
+  local pole_unit = mirror.unit_number and storage.catenary_mirrors[mirror.unit_number]
+  local gate = pole_unit and storage.catenary_gates[pole_unit]
+  if not gate then
+    return
+  end
+  local pole = gate.pole
+  catenary.on_removed(pole, true)
+  if is_valid(pole) then
+    pole.destroy()
   end
 end
 
@@ -615,6 +679,7 @@ function catenary.rebuild_all()
     end
   end
   storage.catenary_gates = {}
+  storage.catenary_mirrors = {}
   storage.catenary_epoch = storage.catenary_epoch + 1
 
   for _, surface in pairs(game.surfaces) do

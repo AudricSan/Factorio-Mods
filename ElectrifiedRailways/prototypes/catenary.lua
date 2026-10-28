@@ -49,30 +49,24 @@ pole.icon = nil
 pole.icon_size = nil
 pole.icon_mipmaps = nil
 
--- Poteau miroir : même image que le poteau (première orientation), sans collision ni
--- sélection, détruit avec le poteau principal.
-local mirror_layers = {}
-for _, layer in ipairs(pole.pictures.layers) do
-  local copy = table.deepcopy(layer)
-  copy.direction_count = nil
-  copy.line_length = nil
-  mirror_layers[#mirror_layers + 1] = copy
+-- Poteau miroir : même image que le poteau (première orientation), sans collision. Il est
+-- sélectionnable : on peut y tirer un câble (le script le reporte sur le poteau principal) ou
+-- le retirer, ce qui retire toute la porte.
+local mirror = table.deepcopy(pole)
+mirror.name = "er-catenary-mirror-pole"
+mirror.flags = {"placeable-neutral", "placeable-off-grid", "not-on-map", "not-blueprintable", "not-repairable"}
+mirror.hidden = true
+mirror.hidden_in_factoriopedia = true
+mirror.minable = {mining_time = 0.2, result = "er-catenary-pole"}
+mirror.collision_box = {{-0.15, -0.15}, {0.15, 0.15}}
+mirror.selection_box = {{-0.4, -0.4}, {0.4, 0.4}}
+mirror.collision_mask = {layers = {}}
+mirror.supply_area_distance = 0
+mirror.connection_points = {mirror.connection_points[1]}
+for _, layer in ipairs(mirror.pictures.layers) do
+  layer.direction_count = 1
+  layer.line_length = 1
 end
-
-local mirror = {
-  type = "simple-entity-with-owner",
-  name = "er-catenary-mirror",
-  icons = table.deepcopy(item.icons),
-  flags = {"placeable-neutral", "placeable-off-grid", "not-on-map", "not-blueprintable", "not-deconstructable", "not-repairable"},
-  hidden = true,
-  hidden_in_factoriopedia = true,
-  selectable_in_game = false,
-  collision_box = {{-0.15, -0.15}, {0.15, 0.15}},
-  selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
-  collision_mask = {layers = {}},
-  drawing_box_vertical_extension = 2.3,
-  picture = {layers = mirror_layers},
-}
 
 data:extend({
   pole,
