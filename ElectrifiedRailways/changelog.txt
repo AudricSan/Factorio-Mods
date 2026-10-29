@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.26
+Date: 2026-10-29
+
+  Bugfixes:
+    - Le bras et la jambe de force d'un poteau placé à droite de la voie sont maintenant le miroir de ceux d'un poteau à gauche, au lieu d'être le même sprite tourné de 180° (éclairage et treillis inversés).
+---------------------------------------------------------------------------------------------------
 Version: 0.3.25
 Date: 2026-10-28
 

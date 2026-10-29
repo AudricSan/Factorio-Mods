@@ -300,6 +300,16 @@ local function turns(dx, dy)
   return (math.atan2(dy, dx) / (2 * math.pi)) % 1
 end
 
+-- Un élément qui part vers la gauche est le miroir de celui qui part vers la droite : on
+-- utilise le sprite « -flip » plutôt que de tourner l'autre de 180° (l'éclairage resterait
+-- inversé). Renvoie le nom du sprite et l'orientation à donner à un vecteur d'écran.
+local function oriented(name, dx, dy, offset)
+  if dx < -0.01 then
+    return name .. "-flip", (-(turns(-dx, dy) - offset)) % 1
+  end
+  return name, (turns(dx, dy) - offset) % 1
+end
+
 -- Points d'un fil qui s'affaisse entre deux points d'écran, comme un câble vanilla.
 local function sagging_points(from, to, segments)
   local length = math.sqrt((to.x - from.x) ^ 2 + (to.y - from.y) ^ 2)
@@ -339,9 +349,10 @@ local function draw_beam(gate, surface)
   dx, dy = to.x - from.x, to.y - from.y
   length = length + BEAM_OVERLAP_POLE + BEAM_OVERLAP_WIRE
 
+  local beam_name, beam_orientation = oriented("er-catenary-beam", dx, dy, 0)
   add_sprite(
-    gate, surface, "er-catenary-beam",
-    {x = from.x + dx / 2, y = from.y + dy / 2}, turns(dx, dy),
+    gate, surface, beam_name,
+    {x = from.x + dx / 2, y = from.y + dy / 2}, beam_orientation,
     length / BEAM_SPRITE_LENGTH, BEAM_THICKNESS / BEAM_SPRITE_THICKNESS
   )
 
@@ -351,10 +362,11 @@ local function draw_beam(gate, surface)
     local strut_to = {x = from.x + dx * 0.6, y = from.y + dy * 0.6 + 0.15}
     local sx, sy = strut_to.x - strut_from.x, strut_to.y - strut_from.y
     local strut_length = math.sqrt(sx * sx + sy * sy)
+    local strut_name, strut_orientation = oriented("er-catenary-strut", sx, sy, STRUT_SPRITE_ANGLE)
     add_sprite(
-      gate, surface, "er-catenary-strut",
+      gate, surface, strut_name,
       {x = strut_from.x + sx / 2, y = strut_from.y + sy / 2},
-      (turns(sx, sy) - STRUT_SPRITE_ANGLE) % 1,
+      strut_orientation,
       strut_length / STRUT_SPRITE_LENGTH
     )
   end

@@ -102,6 +102,8 @@ data:extend({
   render_sprite("er-catenary-beam", 106, 40),
   render_sprite("er-catenary-insulator", 25, 56),
   render_sprite("er-catenary-strut", 74, 66),
+  render_sprite("er-catenary-beam-flip", 106, 40),
+  render_sprite("er-catenary-strut-flip", 74, 66),
   item,
   {
     type = "recipe",

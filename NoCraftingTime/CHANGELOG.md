@@ -2,7 +2,7 @@
 
 Toutes les modifications notables de ce projet seront documentées dans ce fichier.
 
-## [2.0.0] - YYYY-MM-DD
+## [2.0.0]
 ### Ajouté
 - Fabrication instantanée pour tous les objets.
 - Consommation minimale d'énergie électrique.
